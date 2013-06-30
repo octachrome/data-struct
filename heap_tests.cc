@@ -11,3 +11,17 @@ TEST(HeapTest, PushOneItemAndPeek) {
 	h.push(5);
 	ASSERT_EQ(5, h.peek()) << "Expected 5 to be at the top of the heap";
 }
+
+TEST(HeapTest, PushLargeThenSmallAndPeek) {
+	Heap<int> h;
+	h.push(8);
+	h.push(5);
+	ASSERT_EQ(8, h.peek()) << "Expected 8 to be at the top of the heap";
+}
+
+TEST(HeapTest, PushSmallThenLargeAndPeek) {
+	Heap<int> h;
+	h.push(5);
+	h.push(8);
+	ASSERT_EQ(8, h.peek()) << "Expected 8 to be at the top of the heap";
+}
