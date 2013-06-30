@@ -1,4 +1,12 @@
+#include <exception>
+
 #define INITIAL_ALLOC 64
+
+class EmptyHeapException : public std::exception {
+	virtual const char* what() const throw() {
+		return "Cannot pop() an empty Heap";
+	}
+} the_EmptyHeapException;
 
 template <class T>
 class Heap {
@@ -16,6 +24,8 @@ public:
 	void push(T value);
 
 	T peek();
+
+	T pop() throw (EmptyHeapException);
 
 private:
 	inline int computeParentIndex(int index) { return (index - 1) / 2; }
@@ -55,7 +65,17 @@ void Heap<T>::bubbleUp(int startIndex)
 }
 
 template<class T>
-T Heap<T>::peek()
+inline T Heap<T>::peek()
 {
+	return data_[0];
+}
+
+template<class T>
+inline T Heap<T>::pop() throw (EmptyHeapException)
+{
+	if (size_ == 0) {
+		throw the_EmptyHeapException;
+	}
+	size_--;
 	return data_[0];
 }
