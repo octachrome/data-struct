@@ -13,7 +13,7 @@ clean:
 
 GTEST_DIR = /home/chris/code/gtest-1.6.0
 
-CXXFLAGS += -g -Wall -Wextra
+CXXFLAGS += -g -Wall -Wextra -fstack-protector-all
 CPPFLAGS += -I$(GTEST_DIR)/include
 
 

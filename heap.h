@@ -1,6 +1,7 @@
+#include <cstring>
 #include <exception>
 
-#define INITIAL_ALLOC 64
+#define INITIAL_CAPACITY 64
 
 class EmptyHeapException : public std::exception {
 	virtual const char* what() const throw() {
@@ -11,12 +12,22 @@ class EmptyHeapException : public std::exception {
 template <class T>
 class Heap {
 	int size_;
+	int capacity_;
 	T* data_;
+
+	inline void init(int capacity) {
+		size_ = 0;
+		capacity_ = capacity;
+		data_ = new T[capacity];
+	}
 
 public:
 	Heap() {
-		size_ = 0;
-		data_ = new T[INITIAL_ALLOC];
+		init(INITIAL_CAPACITY);
+	}
+
+	Heap(int capacity) {
+		init(capacity);
 	}
 
 	inline int size() const { return size_; }
@@ -28,6 +39,7 @@ public:
 	T pop() throw (EmptyHeapException);
 
 private:
+	void growIfNeeded();
 	inline int computeParentIndex(int index) { return (index - 1) / 2; }
 	inline int computeFirstChildIndex(int index) { return (index + 1) * 2 - 1; }
 	inline int computeSecondChildIndex(int index) { return (index + 1) * 2; }
@@ -44,10 +56,23 @@ private:
 template<class T>
 void Heap<T>::push(T value)
 {
+	growIfNeeded();
+
 	data_[size_] = value;
 	size_++;
 
 	bubbleUp(size_ - 1);
+}
+
+template<class T>
+inline void Heap<T>::growIfNeeded() {
+	if (size_ == capacity_) {
+		int newCapacity = capacity_ * 2;
+		T* newData = new T[newCapacity];
+		memcpy(newData, data_, capacity_ * sizeof(T));
+		capacity_ = newCapacity;
+		data_ = newData;
+	}
 }
 
 template<class T>

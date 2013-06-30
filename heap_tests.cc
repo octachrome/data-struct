@@ -102,3 +102,14 @@ TEST(HeapTest, PushLotsAndPop) {
 	i = h.pop();
 	ASSERT_EQ(1, i) << "Expected 1 to be popped";
 }
+
+TEST(HeapTest, PushBeyondCapacity) {
+	Heap<int> h(1);
+	for (int i = 0; i < 1000; i++) {
+		h.push(i);
+	}
+	int i = h.pop();
+	ASSERT_EQ(999, i) << "Expected 999 to be popped";
+	i = h.pop();
+	ASSERT_EQ(998, i) << "Expected 998 to be popped";
+}
