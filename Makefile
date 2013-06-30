@@ -9,7 +9,7 @@ heap_tests: heap_tests.o gtest_main.a
 heap_tests.o: heap.h
 
 clean:
-	-rm *.o heap_tests
+	-rm *.o *.a heap_tests
 
 GTEST_DIR = /home/chris/code/gtest-1.6.0
 
