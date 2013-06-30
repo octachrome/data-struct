@@ -139,3 +139,39 @@ TEST(HeapTest, MinComparator) {
 	i = h.pop();
 	ASSERT_EQ(15, i) << "Expected 15 to be popped";
 }
+
+TEST(HeapTest, PopulateFromArray) {
+	const int data[] = {5, 8, 3, 2, 15, 1};
+	Heap<int> h(data, 6);
+
+	int i = h.pop();
+	ASSERT_EQ(15, i) << "Expected 15 to be popped";
+	i = h.pop();
+	ASSERT_EQ(8, i) << "Expected 8 to be popped";
+	i = h.pop();
+	ASSERT_EQ(5, i) << "Expected 5 to be popped";
+	i = h.pop();
+	ASSERT_EQ(3, i) << "Expected 3 to be popped";
+	i = h.pop();
+	ASSERT_EQ(2, i) << "Expected 2 to be popped";
+	i = h.pop();
+	ASSERT_EQ(1, i) << "Expected 1 to be popped";
+
+}
+
+TEST(HeapTest, PopulateFromBigArray) {
+	int data[100];
+	for (int i = 0; i < 50; i++) {
+		data[i] = i;
+	}
+	for (int i = 50; i < 100; i++) {
+		data[149 - i] = i;
+	}
+
+	Heap<int> h(data, 100);
+
+	for (int i = 99; i >= 0; i--) {
+		int j = h.pop();
+		ASSERT_EQ(i, j) << "Expected the elements to be popped in sequence";
+	}
+}

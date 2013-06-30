@@ -25,6 +25,17 @@ class Heap {
 		comparator_ = comparator;
 	}
 
+	void populate(const T* data, int size) {
+		size_ = size;
+		memcpy(data_, data, size * sizeof(T));
+
+		int deepestNodeWithChildren = (size + 1) / 2 - 1;
+
+		for (int i = deepestNodeWithChildren; i >= 0; i--) {
+			bubbleDown(i);
+		}
+	}
+
 public:
 	Heap() {
 		init(INITIAL_CAPACITY, defaultComparator);
@@ -40,6 +51,11 @@ public:
 
 	Heap(int capacity, Comparator comparator) {
 		init(capacity, comparator);
+	}
+
+	Heap(const T* data, int size) {
+		init(size, defaultComparator);
+		populate(data, size);
 	}
 
 	inline int size() const { return size_; }
