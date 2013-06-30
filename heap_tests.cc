@@ -113,3 +113,29 @@ TEST(HeapTest, PushBeyondCapacity) {
 	i = h.pop();
 	ASSERT_EQ(998, i) << "Expected 998 to be popped";
 }
+
+bool minComparator(int value1, int value2) {
+	return value1 < value2;
+}
+
+TEST(HeapTest, MinComparator) {
+	Heap<int> h(minComparator);
+	h.push(5);
+	h.push(8);
+	h.push(3);
+	h.push(2);
+	h.push(15);
+	h.push(1);
+	int i = h.pop();
+	ASSERT_EQ(1, i) << "Expected 1 to be popped";
+	i = h.pop();
+	ASSERT_EQ(2, i) << "Expected 2 to be popped";
+	i = h.pop();
+	ASSERT_EQ(3, i) << "Expected 3 to be popped";
+	i = h.pop();
+	ASSERT_EQ(5, i) << "Expected 5 to be popped";
+	i = h.pop();
+	ASSERT_EQ(8, i) << "Expected 8 to be popped";
+	i = h.pop();
+	ASSERT_EQ(15, i) << "Expected 15 to be popped";
+}

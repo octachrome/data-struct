@@ -11,23 +11,35 @@ class EmptyHeapException : public std::exception {
 
 template <class T>
 class Heap {
+	typedef bool (*Comparator)(T value1, T value2);
+
 	int size_;
 	int capacity_;
 	T* data_;
+	Comparator comparator_;
 
-	inline void init(int capacity) {
+	inline void init(int capacity, Comparator comparator) {
 		size_ = 0;
 		capacity_ = capacity;
 		data_ = new T[capacity];
+		comparator_ = comparator;
 	}
 
 public:
 	Heap() {
-		init(INITIAL_CAPACITY);
+		init(INITIAL_CAPACITY, defaultComparator);
 	}
 
 	Heap(int capacity) {
-		init(capacity);
+		init(capacity, defaultComparator);
+	}
+
+	Heap(Comparator comparator) {
+		init(INITIAL_CAPACITY, comparator);
+	}
+
+	Heap(int capacity, Comparator comparator) {
+		init(capacity, comparator);
 	}
 
 	inline int size() const { return size_; }
@@ -51,6 +63,8 @@ private:
 	void bubbleUp(int startIndex);
 
 	void bubbleDown(int startIndex);
+
+	static bool defaultComparator(T value1, T value2);
 };
 
 template<class T>
@@ -80,8 +94,8 @@ void Heap<T>::bubbleUp(int startIndex)
 {
 	while (startIndex > 0) {
 		int parentIndex = computeParentIndex(startIndex);
-		if (data_[startIndex] > data_[parentIndex]) {
-			swap(startIndex, parentIndex);
+		if (lessThan(parentIndex, startIndex)) {
+			swap(parentIndex, startIndex);
 		}
 		startIndex = parentIndex;		
 	}
@@ -132,7 +146,7 @@ inline bool Heap<T>::lessThan(int index1, int index2)
 	}
 	T value1 = data_[index1];
 	T value2 = data_[index2];
-	return value1 < value2;
+	return !comparator_(value1, value2);
 }
 
 template<class T>
@@ -155,4 +169,9 @@ inline T Heap<T>::pop() throw (EmptyHeapException)
 	bubbleDown(0);
 
 	return head;
+}
+
+template<class T>
+inline bool Heap<T>::defaultComparator(T value1, T value2) {
+	return value1 > value2;
 }
