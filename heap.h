@@ -19,11 +19,11 @@ public:
 		data_ = new T[INITIAL_ALLOC];
 	}
 
-	inline int size() { return size_; }
+	inline int size() const { return size_; }
 
 	void push(T value);
 
-	T peek();
+	T peek() const;
 
 	T pop() throw (EmptyHeapException);
 
@@ -65,7 +65,7 @@ void Heap<T>::bubbleUp(int startIndex)
 }
 
 template<class T>
-inline T Heap<T>::peek()
+inline T Heap<T>::peek() const
 {
 	return data_[0];
 }
