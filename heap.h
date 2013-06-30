@@ -58,6 +58,10 @@ public:
 		populate(data, size);
 	}
 
+	~Heap() {
+		delete data_;
+	}
+
 	inline int size() const { return size_; }
 
 	void push(T value);
@@ -100,6 +104,7 @@ inline void Heap<T>::growIfNeeded() {
 		int newCapacity = capacity_ * 2;
 		T* newData = new T[newCapacity];
 		memcpy(newData, data_, capacity_ * sizeof(T));
+		delete data_;
 		capacity_ = newCapacity;
 		data_ = newData;
 	}
