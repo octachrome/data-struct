@@ -66,12 +66,12 @@ public:
 	}
 
 	~Heap() {
-		delete data_;
+		delete[] data_;
 	}
 
 	Heap& operator=(const Heap& h) {
 		if (capacity_ < h.size_) {
-			delete data_;
+			delete[] data_;
 			data_ = new T[h.size_];
 			capacity_ = h.size_;
 		}
@@ -123,7 +123,7 @@ inline void Heap<T>::growIfNeeded() {
 		int newCapacity = capacity_ * 2;
 		T* newData = new T[newCapacity];
 		memcpy(newData, data_, capacity_ * sizeof(T));
-		delete data_;
+		delete[] data_;
 		capacity_ = newCapacity;
 		data_ = newData;
 	}
