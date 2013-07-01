@@ -1,5 +1,6 @@
 #include <cstring>
 #include <exception>
+#include <iostream>
 
 #define INITIAL_CAPACITY 64
 
@@ -58,8 +59,26 @@ public:
 		populate(data, size);
 	}
 
+	Heap(const Heap& h) {
+		init(h.size_, h.comparator_);
+		memcpy(data_, h.data_, h.size_ * sizeof(T));
+		size_ = h.size_;
+	}
+
 	~Heap() {
 		delete data_;
+	}
+
+	Heap& operator=(const Heap& h) {
+		if (capacity_ < h.size_) {
+			delete data_;
+			data_ = new T[h.size_];
+			capacity_ = h.size_;
+		}
+		memcpy(data_, h.data_, h.size_ * sizeof(T));
+		size_ = h.size_;
+		comparator_ = h.comparator_;
+		return *this;
 	}
 
 	inline int size() const { return size_; }

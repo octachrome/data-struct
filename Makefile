@@ -4,7 +4,7 @@ run_tests: heap_tests
 	./heap_tests
 
 heap_tests: heap_tests.o gtest_main.a
-	g++ -o heap_tests $^ -lpthread
+	g++ -g -o heap_tests $^ -lpthread
 
 heap_tests.o: heap.h
 
