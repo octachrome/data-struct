@@ -1,15 +1,23 @@
-all: run_tests
+all: run_heap_tests run_btree_tests
 
-run_tests: heap_tests
+run_heap_tests: heap_tests
 	./heap_tests
 
+run_btree_tests: btree_tests
+	./btree_tests
+
 heap_tests: heap_tests.o gtest_main.a
-	g++ -g -o heap_tests $^ -lpthread
+	g++ -g -o $@ $^ -lpthread
+
+btree_tests: btree_tests.o gtest_main.a
+	g++ -g -o $@ $^ -lpthread
 
 heap_tests.o: heap.h
 
+btree_tests.o: btree.h
+
 clean:
-	-rm *.o *.a heap_tests
+	-rm *.o *.a heap_tests btree_tests
 
 GTEST_DIR = /home/chris/code/gtest-1.6.0
 
