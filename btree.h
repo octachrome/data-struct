@@ -51,8 +51,27 @@ public:
 		return e->value;
 	}
 
+	bool contains(const K& key) {
+		return find(key) != 0;
+	}
+
 	const iterator begin() {
 		return iterator(first_);
+	}
+
+	void remove(const K& key) {
+		element* last = 0;
+		for (element* e = first_; e != 0; e = e->next) {
+			if (e->key == key) {
+				if (last == 0) {
+					first_ = e->next;
+				} else {
+					last->next = e->next;
+				}
+				delete e;
+				return;
+			}
+		}
 	}
 
 private:

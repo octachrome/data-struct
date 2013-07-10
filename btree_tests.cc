@@ -49,6 +49,7 @@ TEST(BTreeTest, Iterate) {
 	b[4] = Data("four");
 	b[9] = Data("nine");
 	b[3] = Data("three");
+	b[5] = Data("five");
 
 	BTree<int, Data>::iterator i = b.begin();
 
@@ -56,5 +57,43 @@ TEST(BTreeTest, Iterate) {
 	++i;
 	ASSERT_EQ(4, i->key) << "Expected 4 to be next";
 	++i;
+	ASSERT_EQ(5, i->key) << "Expected 5 to be next";
+	++i;
 	ASSERT_EQ(9, i->key) << "Expected 9 to be next";
+}
+
+TEST(BTreeTest, Delete) {
+	BTree<int, Data> b;
+
+	b[4] = Data("four");
+	b[9] = Data("nine");
+	b[3] = Data("three");
+	b[5] = Data("five");
+
+	ASSERT_TRUE(b.contains(4)) << "Expected 4 to be present";
+
+	// middle element
+	b.remove(4);
+
+	ASSERT_FALSE(b.contains(4)) << "Expected 4 to have been removed";
+
+	// first element
+	b.remove(3);
+
+	ASSERT_FALSE(b.contains(3)) << "Expected 3 to have been removed";
+
+	// last element
+	b.remove(9);
+
+	ASSERT_FALSE(b.contains(9)) << "Expected 9 to have been removed";
+
+	// only element
+	b.remove(5);
+
+	ASSERT_FALSE(b.contains(5)) << "Expected 5 to have been removed";
+
+	// unknown element
+	b.remove(10);
+
+	ASSERT_FALSE(b.contains(10)) << "Expected 10 to be absent";
 }
