@@ -15,7 +15,15 @@ public:
 	}
 
 	const char* str() { return str_; }
+
+	int compare(Data& d2) {
+		return strcmp(str_, d2.str_);
+	}
 };
+
+int compare(Data& d1, Data& d2) {
+	return d1.compare(d2);
+}
 
 TEST(BTreeTest, AssignKeyValuePair) {
 	BTree<int, Data> b;
@@ -33,4 +41,20 @@ TEST(BTreeTest, AssignTwoKeyValuePairs) {
 
 	ASSERT_STREQ("four", b[4].str()) << "Expected 4 to be mapped to 'four'";
 	ASSERT_STREQ("nine", b[9].str()) << "Expected 9 to be mapped to 'nine'";
+}
+
+TEST(BTreeTest, Iterate) {
+	BTree<int, Data> b;
+
+	b[4] = Data("four");
+	b[9] = Data("nine");
+	b[3] = Data("three");
+
+	BTree<int, Data>::iterator i = b.begin();
+
+	ASSERT_EQ(3, i->key) << "Expected 3 to be next";
+	++i;
+	ASSERT_EQ(4, i->key) << "Expected 4 to be next";
+	++i;
+	ASSERT_EQ(9, i->key) << "Expected 9 to be next";
 }
