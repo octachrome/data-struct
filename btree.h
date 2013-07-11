@@ -31,6 +31,8 @@ public:
 
 template<class K, class V>
 class BTree {
+	Element<K, V> data_[4];
+	Element<K, V>* free_;
 	Element<K, V>* first_;
 
 public:
@@ -39,12 +41,19 @@ public:
 
 	BTree() {
 		first_ = 0;
+
+		free_ = &data_[0];
+		for (int i = 0; i < 3; i++) {
+			data_[i].next = &data_[i+1];
+		}
+		data_[3].next = 0;
 	}
 
 	V& operator[](const K& key) {
 		element* e = find(key);
 		if (e == 0) {
-			e = new element;
+			e = free_;
+			free_ = free_->next;
 			e->key = key;
 			insert(e);
 		}
@@ -68,7 +77,8 @@ public:
 				} else {
 					last->next = e->next;
 				}
-				delete e;
+				e->next = free_;
+				free_ = e;
 				return;
 			}
 		}

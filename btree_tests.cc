@@ -62,7 +62,7 @@ TEST(BTreeTest, Iterate) {
 	ASSERT_EQ(9, i->key) << "Expected 9 to be next";
 }
 
-TEST(BTreeTest, Delete) {
+TEST(BTreeTest, Remove) {
 	BTree<int, Data> b;
 
 	b[4] = Data("four");
@@ -96,4 +96,13 @@ TEST(BTreeTest, Delete) {
 	b.remove(10);
 
 	ASSERT_FALSE(b.contains(10)) << "Expected 10 to be absent";
+}
+
+TEST(BTreeTest, RemoveAndAdd) {
+	BTree<int, Data> b;
+
+	for (int i = 0; i < 20; i++) {
+		b[4] = Data("four");
+		b.remove(4);
+	}
 }
