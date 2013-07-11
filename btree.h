@@ -7,22 +7,22 @@ struct Element {
 	V value;
 };
 
-template<class K, class V>
+template<class K, class V, int PAGE_SIZE>
 struct Page {
 	typedef Element<K, V> element;
 
 	element* free_;
 	element* first_;
-	element data_[];
+	element data_[PAGE_SIZE];
 
-	void init(int pageSize) {
+	void init() {
 		first_ = 0;
 
 		free_ = &data_[0];
-		for (int i = 0; i < pageSize; i++) {
+		for (int i = 0; i < PAGE_SIZE; i++) {
 			data_[i].next = &data_[i+1];
 		}
-		data_[pageSize-1].next = 0;
+		data_[PAGE_SIZE-1].next = 0;
 	}
 
 	element* find(const K& key) {
@@ -100,32 +100,26 @@ public:
 	}
 };
 
-template<class K, class V>
+template<class K, class V, int PAGE_SIZE = DEFAULT_PAGE_SIZE>
 class BTree {
-	typedef Page<K, V> page_t;
+	typedef Page<K, V, PAGE_SIZE> page_t;
 
-	int pageSize_;
 	page_t* page_;
 
-	void init(int pageSize) {
-		pageSize_ = pageSize_;
-		page_ = (page_t*) operator new(sizeof(page_t) + sizeof(Element<K, V>) * pageSize);
-		page_->init(pageSize);
+	void init() {
+		page_ = new page_t;
+		page_->init();
 	}
 
 public:
 	typedef BTree_iterator<K, V> iterator;
 
 	BTree() {
-		init(DEFAULT_PAGE_SIZE);
-	}
-
-	BTree(int pageSize) {
-		init(pageSize);
+		init();
 	}
 
 	~BTree() {
-		operator delete(page_);
+		delete page_;
 	}
 
 	V& operator[](const K& key) {

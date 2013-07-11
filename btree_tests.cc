@@ -2,6 +2,8 @@
 #include "gtest/gtest.h"
 #include <cstring>
 
+static int totalDestroyed = 0;
+
 class Data {
 	char str_[100];
 public:
@@ -12,6 +14,10 @@ public:
 	Data(const char *str) {
 		strncpy(str_, str, 100);
 		str_[99] = 0;
+	}
+
+	~Data() {
+		totalDestroyed++;
 	}
 
 	const char* str() const { return str_; };
@@ -102,11 +108,21 @@ TEST(BTreeTest, Remove) {
 	ASSERT_FALSE(b.contains(10)) << "Expected 10 to be absent";
 }
 
-TEST(BTreeTest, RemoveAndAdd) {
-	BTree<int, Data> b;
+TEST(BTreeTest, RecycleElements) {
+	BTree<int, Data, 4> b;
 
 	for (int i = 0; i < 20; i++) {
 		b[4] = Data("four");
 		b.remove(4);
 	}
+}
+
+void allocateOnePageOfFour() {
+	BTree<int, Data, 4> b;
+}
+
+TEST(BTreeTest, ValueDestructorCalled) {
+	totalDestroyed = 0;
+	allocateOnePageOfFour();
+	ASSERT_EQ(4, totalDestroyed) << "Expected every element in the page to have been destroyed";
 }
