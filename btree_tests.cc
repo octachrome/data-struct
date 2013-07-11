@@ -14,9 +14,9 @@ public:
 		str_[99] = 0;
 	}
 
-	const char* str() { return str_; }
+	const char* str() const { return str_; };
 
-	int compare(Data& d2) {
+	int compare(Data& d2) const {
 		return strcmp(str_, d2.str_);
 	}
 };
@@ -54,12 +54,16 @@ TEST(BTreeTest, Iterate) {
 	BTree<int, Data>::iterator i = b.begin();
 
 	ASSERT_EQ(3, i->key) << "Expected 3 to be next";
+	ASSERT_STREQ("three", i->value.str()) << "Expected the correct value";
 	++i;
 	ASSERT_EQ(4, i->key) << "Expected 4 to be next";
+	ASSERT_STREQ("four", i->value.str()) << "Expected the correct value";
 	++i;
 	ASSERT_EQ(5, i->key) << "Expected 5 to be next";
+	ASSERT_STREQ("five", i->value.str()) << "Expected the correct value";
 	++i;
 	ASSERT_EQ(9, i->key) << "Expected 9 to be next";
+	ASSERT_STREQ("nine", i->value.str()) << "Expected the correct value";
 }
 
 TEST(BTreeTest, Remove) {
