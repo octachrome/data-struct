@@ -13,15 +13,15 @@ struct Node {
 
 	typedef Element<K, V> element;
 
-	virtual void init() = 0;
-
 	virtual element* find(const K& key) = 0;
 
-	virtual V& findOrInsert(const K& key) = 0;
+	virtual element* findOrInsert(const K& key) = 0;
 
 	virtual void remove(const K& key) = 0;
 
 	virtual element* first() = 0;
+
+	virtual Node<K, V, PAGE_SIZE>* split() = 0;
 };
 
 template<class K, class V, int PAGE_SIZE>
@@ -35,9 +35,7 @@ struct Page {
 	element* first_;
 	element data_[PAGE_SIZE];
 
-	virtual ~Page() {}
-
-	void p_init() {
+	Page() {
 		size_ = 0;
 		first_ = 0;
 
@@ -47,6 +45,8 @@ struct Page {
 		}
 		data_[PAGE_SIZE-1].next = 0;
 	}
+
+	virtual ~Page() {}
 
 	element* p_find(const K& key) {
 		for (element* e = first_; e != 0; e = e->next) {
@@ -90,12 +90,12 @@ struct Page {
 		return i;
 	}
 
-	V& p_findOrInsert(const K& key) {
+	element* p_findOrInsert(const K& key) {
 		element* e = p_find(key);
 		if (e == 0) {
 			e = insert(key);
 		}
-		return e->value;
+		return e;
 	}
 
 	void p_remove(const K& key) {
@@ -121,17 +121,13 @@ Element<K, V>* Page<K, V, PAGE_SIZE>::FULL = (Element<K, V>*) 1;
 
 template<class K, class V, int PAGE_SIZE>
 struct Leaf : Node<K, V, PAGE_SIZE>, Page<K, V, PAGE_SIZE> {
-	typedef Element<K, V> element;
+	typedef Element<K, V> element_t;
 
-	void init() {
-		this->p_init();
-	}
-
-	element* find(const K& key) {
+	element_t* find(const K& key) {
 		return p_find(key);
 	}
 
-	V& findOrInsert(const K& key) {
+	element_t* findOrInsert(const K& key) {
 		return p_findOrInsert(key);
 	}
 
@@ -139,8 +135,29 @@ struct Leaf : Node<K, V, PAGE_SIZE>, Page<K, V, PAGE_SIZE> {
 		p_remove(key);
 	}
 
-	element* first() {
+	element_t* first() {
 		return this->first_;
+	}
+
+	Leaf* split() {
+		Leaf* newLeaf = new Leaf;
+
+		element_t* middle = this->first_;
+		for (int i = 0; i < PAGE_SIZE/2; i++) {
+			middle = middle->next;
+		}
+
+		element_t* last;
+		for (element_t *e = middle; e != 0; e = e->next) {
+			last = e;
+			newLeaf->findOrInsert(e->key)->value = e->value;
+		}
+
+		last->next = this->free_;
+		this->free_ = middle;
+		this->size_ = PAGE_SIZE/2;
+
+		return newLeaf;
 	}
 };
 
@@ -155,10 +172,6 @@ struct Index : Node<K, V, PAGE_SIZE>, Page<K, Node<K, V, PAGE_SIZE>*, PAGE_SIZE>
 		infimum_ = infimum;
 	}
 
-	void init() {
-		this->p_init();
-	}
-
 	element_t* find(const K& key) {
 		indexelement_t *el = p_findInsertPos(key);
 		if (el == 0) {
@@ -168,7 +181,7 @@ struct Index : Node<K, V, PAGE_SIZE>, Page<K, Node<K, V, PAGE_SIZE>*, PAGE_SIZE>
 		}
 	}
 
-	V& findOrInsert(const K& key) {
+	element_t* findOrInsert(const K& key) {
 		indexelement_t* el = p_findInsertPos(key);
 		if (el == 0) {
 			return infimum_->findOrInsert(key);
@@ -188,6 +201,14 @@ struct Index : Node<K, V, PAGE_SIZE>, Page<K, Node<K, V, PAGE_SIZE>*, PAGE_SIZE>
 
 	element_t* first() {
 		return infimum_->first();
+	}
+
+	Index* split() {
+		return 0;
+	}
+
+	void addPage(Node<K, V, PAGE_SIZE>* page) {
+		insert(page->first()->key)->value = page;
 	}
 };
 
@@ -218,29 +239,28 @@ public:
 template<class K, class V, int PAGE_SIZE = DEFAULT_PAGE_SIZE>
 class BTree {
 	Node<K, V, PAGE_SIZE>* root_;
-	Node<K, V, PAGE_SIZE>* leaf_;
-
-	void init() {
-		leaf_ = new Leaf<K, V, PAGE_SIZE>;
-		leaf_->init();
-		root_ = new Index<K, V, PAGE_SIZE>(leaf_);
-		root_->init();
-	}
 
 public:
 	typedef BTree_iterator<K, V> iterator;
 
 	BTree() {
-		init();
+		root_ = new Leaf<K, V, PAGE_SIZE>;
 	}
 
 	~BTree() {
-		delete leaf_;
 		delete root_;
 	}
 
 	V& operator[](const K& key) {
-		return root_->findOrInsert(key);
+		Element<K, V> *e = root_->findOrInsert(key);
+		if (e == Page<K, V, PAGE_SIZE>::FULL) {
+			Node<K, V, PAGE_SIZE>* newPage = root_->split();
+			Index<K, V, PAGE_SIZE>* newRoot = new Index<K, V, PAGE_SIZE>(root_);
+			newRoot->addPage(newPage);
+			root_ = newRoot;
+			e = root_->findOrInsert(key);
+		}
+		return e->value;
 	}
 
 	bool contains(const K& key) {

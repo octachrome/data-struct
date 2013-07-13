@@ -128,7 +128,7 @@ TEST(BTreeTest, ValueDestructorCalled) {
 }
 
 TEST(BTreeTest, OverflowOnePage) {
-	BTree<int, Data, 4> b;
+	BTree<int, Data, 16> b;
 
 	for (int i = 0; i < 20; i++) {
 		b[i] = Data("test");
