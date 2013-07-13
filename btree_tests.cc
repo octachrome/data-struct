@@ -127,14 +127,21 @@ TEST(BTreeTest, ValueDestructorCalled) {
 	ASSERT_EQ(4, totalDestroyed) << "Expected every element in the page to have been destroyed";
 }
 
+char TEST_DATA[20*2];
+
 TEST(BTreeTest, OverflowOnePage) {
+	for (int i = 0; i < 40; i += 2) {
+		TEST_DATA[i] = 'A' + i;
+		TEST_DATA[i+1] = 0;
+	}
+
 	BTree<int, Data, 16> b;
 
 	for (int i = 0; i < 20; i++) {
-		b[i] = Data("test");
+		b[i] = Data(&TEST_DATA[i*2]);
 	}
 
 	for (int i = 0; i < 20; i++) {
-		ASSERT_TRUE(b.contains(i)) << "Expected element " << i << " to have been stored";
+		ASSERT_STREQ(&TEST_DATA[i*2], b[i].str()) << "Expected element " << i << " to have been stored";
 	}
 }
