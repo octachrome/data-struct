@@ -2,10 +2,15 @@
 
 template<class K, class V>
 struct Element {
+	static Element* FULL;
+
 	Element<K, V>* next;
 	K key;
 	V value;
 };
+
+template<class K, class V>
+Element<K, V>* Element<K, V>::FULL = (Element<K, V>*) 1;
 
 template<class K, class V, int PAGE_SIZE>
 struct Node {
@@ -26,14 +31,12 @@ struct Node {
 
 template<class K, class V, int PAGE_SIZE>
 struct Page {
-	typedef Element<K, V> element;
-
-	static element* FULL;
+	typedef Element<K, V> element_t;
 
 	int size_;
-	element* free_;
-	element* first_;
-	element data_[PAGE_SIZE];
+	element_t* free_;
+	element_t* first_;
+	element_t data_[PAGE_SIZE];
 
 	Page() {
 		size_ = 0;
@@ -48,8 +51,8 @@ struct Page {
 
 	virtual ~Page() {}
 
-	element* p_find(const K& key) {
-		for (element* e = first_; e != 0; e = e->next) {
+	element_t* p_find(const K& key) {
+		for (element_t* e = first_; e != 0; e = e->next) {
 			if (e->key == key) {
 				return e;
 			}
@@ -57,17 +60,17 @@ struct Page {
 		return 0;
 	}
 
-	element* insert(const K& key) {
+	element_t* insert(const K& key) {
 		if (size_ == PAGE_SIZE-1) {
-			return FULL;
+			return element_t::FULL;
 		}
 		size_++;
 
-		element* e = free_;
+		element_t* e = free_;
 		free_ = free_->next;
 		e->key = key;
 
-		element* i = p_findInsertPos(key);
+		element_t* i = p_findInsertPos(key);
 		if (i == 0) {
 			e->next = first_;
 			first_ = e;
@@ -79,19 +82,19 @@ struct Page {
 		}
 	}
 
-	element* p_findInsertPos(const K& key) {
+	element_t* p_findInsertPos(const K& key) {
 		if (first_ == 0 || key < first_->key) {
 			return 0;
 		}
-		element *i = first_;
+		element_t *i = first_;
 		while (i->next != 0 && i->next->key < key) {
 			i = i->next;
 		}
 		return i;
 	}
 
-	element* p_findOrInsert(const K& key) {
-		element* e = p_find(key);
+	element_t* p_findOrInsert(const K& key) {
+		element_t* e = p_find(key);
 		if (e == 0) {
 			e = insert(key);
 		}
@@ -99,8 +102,8 @@ struct Page {
 	}
 
 	void p_remove(const K& key) {
-		element* last = 0;
-		for (element* e = first_; e != 0; e = e->next) {
+		element_t* last = 0;
+		for (element_t* e = first_; e != 0; e = e->next) {
 			if (e->key == key) {
 				if (last == 0) {
 					first_ = e->next;
@@ -114,10 +117,24 @@ struct Page {
 			}
 		}
 	}
-};
 
-template<class K, class V, int PAGE_SIZE>
-Element<K, V>* Page<K, V, PAGE_SIZE>::FULL = (Element<K, V>*) 1;
+	void p_split(Page* newPage) {
+		element_t* middle = this->first_;
+		for (int i = 0; i < PAGE_SIZE/2; i++) {
+			middle = middle->next;
+		}
+
+		element_t* last;
+		for (element_t *e = middle; e != 0; e = e->next) {
+			last = e;
+			newPage->insert(e->key)->value = e->value;
+		}
+
+		last->next = this->free_;
+		free_ = middle;
+		size_ = PAGE_SIZE/2;
+	}
+};
 
 template<class K, class V, int PAGE_SIZE>
 struct Leaf : Node<K, V, PAGE_SIZE>, Page<K, V, PAGE_SIZE> {
@@ -141,22 +158,7 @@ struct Leaf : Node<K, V, PAGE_SIZE>, Page<K, V, PAGE_SIZE> {
 
 	Leaf* split() {
 		Leaf* newLeaf = new Leaf;
-
-		element_t* middle = this->first_;
-		for (int i = 0; i < PAGE_SIZE/2; i++) {
-			middle = middle->next;
-		}
-
-		element_t* last;
-		for (element_t *e = middle; e != 0; e = e->next) {
-			last = e;
-			newLeaf->findOrInsert(e->key)->value = e->value;
-		}
-
-		last->next = this->free_;
-		this->free_ = middle;
-		this->size_ = PAGE_SIZE/2;
-
+		p_split(newLeaf);
 		return newLeaf;
 	}
 };
@@ -166,45 +168,49 @@ struct Index : Node<K, V, PAGE_SIZE>, Page<K, Node<K, V, PAGE_SIZE>*, PAGE_SIZE>
 	typedef Element<K, Node<K, V, PAGE_SIZE>*> indexelement_t;
 	typedef Element<K, V> element_t;
 
-	Node<K, V, PAGE_SIZE>* infimum_;
-
-	Index(Node<K, V, PAGE_SIZE>* infimum) {
-		infimum_ = infimum;
-	}
-
 	element_t* find(const K& key) {
 		indexelement_t *el = p_findInsertPos(key);
 		if (el == 0) {
-			return infimum_->find(key);
-		} else {
-			return el->value->find(key);
+			el = this->first_;
 		}
+		return el->value->find(key);
 	}
 
 	element_t* findOrInsert(const K& key) {
 		indexelement_t* el = p_findInsertPos(key);
 		if (el == 0) {
-			return infimum_->findOrInsert(key);
-		} else {
-			return el->value->findOrInsert(key);
+			el = this->first_;
 		}
+		Node<K, V, PAGE_SIZE>* node = el->value;
+		element_t* e = node->findOrInsert(key);
+		if (e == element_t::FULL) {
+			if (this->size_ == PAGE_SIZE-1) {
+				return element_t::FULL;
+			} else {
+				Node<K, V, PAGE_SIZE>* newNode = node->split();
+				insert(newNode->first()->key)->value = newNode;
+				return findOrInsert(key);
+			}
+		}
+		return e;
 	}
 
 	void remove(const K& key) {
 		indexelement_t* el = p_findInsertPos(key);
 		if (el == 0) {
-			return infimum_->remove(key);
-		} else {
-			return el->value->remove(key);
+			el = this->first_;
 		}
+		return el->value->remove(key);
 	}
 
 	element_t* first() {
-		return infimum_->first();
+		return this->first_->value->first();
 	}
 
 	Index* split() {
-		return 0;
+		Index* newIndex = new Index;
+		p_split(newIndex);
+		return newIndex;
 	}
 
 	void addPage(Node<K, V, PAGE_SIZE>* page) {
@@ -253,9 +259,10 @@ public:
 
 	V& operator[](const K& key) {
 		Element<K, V> *e = root_->findOrInsert(key);
-		if (e == Page<K, V, PAGE_SIZE>::FULL) {
+		if (e == Element<K, V>::FULL) {
 			Node<K, V, PAGE_SIZE>* newPage = root_->split();
-			Index<K, V, PAGE_SIZE>* newRoot = new Index<K, V, PAGE_SIZE>(root_);
+			Index<K, V, PAGE_SIZE>* newRoot = new Index<K, V, PAGE_SIZE>();
+			newRoot->addPage(root_);
 			newRoot->addPage(newPage);
 			root_ = newRoot;
 			e = root_->findOrInsert(key);

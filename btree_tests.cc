@@ -145,3 +145,33 @@ TEST(BTreeTest, OverflowOnePage) {
 		ASSERT_STREQ(&TEST_DATA[i*2], b[i].str()) << "Expected element " << i << " to have been stored";
 	}
 }
+
+TEST(BTreeTest, ThreeLevelTree) {
+	for (int i = 0; i < 40; i += 2) {
+		TEST_DATA[i] = 'A' + i;
+		TEST_DATA[i+1] = 0;
+	}
+
+	// Need 4^3 leaves to store 20 elements
+	BTree<int, Data, 4> b;
+
+	for (int i = 0; i < 20; i++) {
+		b[i] = Data(&TEST_DATA[i*2]);
+	}
+
+	for (int i = 0; i < 20; i++) {
+		ASSERT_STREQ(&TEST_DATA[i*2], b[i].str()) << "Expected element " << i << " to have been stored";
+	}
+}
+
+TEST(BTreeTest, LotsOfNodes) {
+	BTree<int, Data, 4> b;
+
+	for (int i = 0; i < 200000; i++) {
+		b[i] = Data("test");
+	}
+
+	for (int i = 0; i < 200000; i++) {
+		ASSERT_TRUE(b.contains(i)) << "Expected element " << i << " to have been stored";
+	}
+}
