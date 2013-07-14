@@ -87,7 +87,7 @@ struct Page {
 			return 0;
 		}
 		element_t *i = first_;
-		while (i->next != 0 && i->next->key < key) {
+		while (i->next != 0 && i->next->key <= key) {
 			i = i->next;
 		}
 		return i;
@@ -119,19 +119,22 @@ struct Page {
 	}
 
 	void p_split(Page* newPage) {
-		element_t* middle = this->first_;
+		element_t* lastToKeep;
+		element_t* firstToRemove = this->first_;
 		for (int i = 0; i < PAGE_SIZE/2; i++) {
-			middle = middle->next;
+			lastToKeep = firstToRemove;
+			firstToRemove = firstToRemove->next;
 		}
+		lastToKeep->next = 0;
 
-		element_t* last;
-		for (element_t *e = middle; e != 0; e = e->next) {
-			last = e;
+		element_t* lastToRemove;
+		for (element_t *e = firstToRemove; e != 0; e = e->next) {
 			newPage->insert(e->key)->value = e->value;
+			lastToRemove = e;
 		}
 
-		last->next = this->free_;
-		free_ = middle;
+		lastToRemove->next = this->free_;
+		free_ = lastToRemove;
 		size_ = PAGE_SIZE/2;
 	}
 };

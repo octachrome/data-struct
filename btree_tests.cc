@@ -130,9 +130,9 @@ TEST(BTreeTest, ValueDestructorCalled) {
 char TEST_DATA[20*2];
 
 TEST(BTreeTest, OverflowOnePage) {
-	for (int i = 0; i < 40; i += 2) {
-		TEST_DATA[i] = 'A' + i;
-		TEST_DATA[i+1] = 0;
+	for (int i = 0; i < 20; i++) {
+		TEST_DATA[2*i] = 'A' + i;
+		TEST_DATA[2*i+1] = 0;
 	}
 
 	BTree<int, Data, 16> b;
@@ -147,9 +147,9 @@ TEST(BTreeTest, OverflowOnePage) {
 }
 
 TEST(BTreeTest, ThreeLevelTree) {
-	for (int i = 0; i < 40; i += 2) {
-		TEST_DATA[i] = 'A' + i;
-		TEST_DATA[i+1] = 0;
+	for (int i = 0; i < 20; i++) {
+		TEST_DATA[2*i] = 'A' + i;
+		TEST_DATA[2*i+1] = 0;
 	}
 
 	// Need 4^3 leaves to store 20 elements
@@ -168,6 +168,19 @@ TEST(BTreeTest, LotsOfNodes) {
 	BTree<int, Data, 4> b;
 
 	for (int i = 0; i < 200000; i++) {
+		b[i] = Data("test");
+	}
+
+	for (int i = 0; i < 200000; i++) {
+		ASSERT_TRUE(b.contains(i)) << "Expected element " << i << " to have been stored";
+	}
+}
+
+
+TEST(BTreeTest, ReverseInsertion) {
+	BTree<int, Data, 4> b;
+
+	for (int i = 200000-1; i >=0 ; i--) {
 		b[i] = Data("test");
 	}
 
