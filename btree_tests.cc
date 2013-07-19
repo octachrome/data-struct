@@ -176,7 +176,6 @@ TEST(BTreeTest, LotsOfNodes) {
 	}
 }
 
-
 TEST(BTreeTest, ReverseInsertion) {
 	BTree<int, Data, 4> b;
 

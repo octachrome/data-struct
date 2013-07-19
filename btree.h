@@ -1,3 +1,5 @@
+#include <iostream>
+
 #define DEFAULT_PAGE_SIZE 16
 
 template<class K, class V>
@@ -27,6 +29,8 @@ struct Node {
 	virtual element* first() = 0;
 
 	virtual Node<K, V, PAGE_SIZE>* split() = 0;
+
+	virtual void print(int indent) = 0;
 };
 
 template<class K, class V, int PAGE_SIZE>
@@ -61,7 +65,7 @@ struct Page {
 	}
 
 	element_t* insert(const K& key) {
-		if (size_ == PAGE_SIZE-1) {
+		if (size_ == PAGE_SIZE) {
 			return element_t::FULL;
 		}
 		size_++;
@@ -134,7 +138,7 @@ struct Page {
 		}
 
 		lastToRemove->next = this->free_;
-		free_ = lastToRemove;
+		free_ = firstToRemove;
 		size_ = PAGE_SIZE/2;
 	}
 };
@@ -164,6 +168,17 @@ struct Leaf : Node<K, V, PAGE_SIZE>, Page<K, V, PAGE_SIZE> {
 		p_split(newLeaf);
 		return newLeaf;
 	}
+
+	void print(int indent) {
+		element_t* e = this->first_;
+		while (e != 0) {
+			for (int i = 0; i < indent; i++) {
+				std::cout << "  ";
+			}
+			std::cout << e->key << ": (value)" << std::endl;
+			e = e->next;
+		}
+	}
 };
 
 template<class K, class V, int PAGE_SIZE>
@@ -187,13 +202,16 @@ struct Index : Node<K, V, PAGE_SIZE>, Page<K, Node<K, V, PAGE_SIZE>*, PAGE_SIZE>
 		Node<K, V, PAGE_SIZE>* node = el->value;
 		element_t* e = node->findOrInsert(key);
 		if (e == element_t::FULL) {
-			if (this->size_ == PAGE_SIZE-1) {
+			if (this->size_ == PAGE_SIZE) {
 				return element_t::FULL;
 			} else {
 				Node<K, V, PAGE_SIZE>* newNode = node->split();
 				insert(newNode->first()->key)->value = newNode;
 				return findOrInsert(key);
 			}
+		}
+		if (key < e->key) {
+			e->key = key;
 		}
 		return e;
 	}
@@ -218,6 +236,18 @@ struct Index : Node<K, V, PAGE_SIZE>, Page<K, Node<K, V, PAGE_SIZE>*, PAGE_SIZE>
 
 	void addPage(Node<K, V, PAGE_SIZE>* page) {
 		insert(page->first()->key)->value = page;
+	}
+
+	void print(int indent) {
+		indexelement_t* ie = this->first_;
+		while (ie != 0) {
+			for (int i = 0; i < indent; i++) {
+				std::cout << "  ";
+			}
+			std::cout << ie->key << ":" << std::endl;
+			ie->value->print(indent + 1);
+			ie = ie->next;
+		}
 	}
 };
 
@@ -283,5 +313,9 @@ public:
 
 	void remove(const K& key) {
 		root_->remove(key);
+	}
+
+	void print() {
+		root_->print(0);
 	}
 };
