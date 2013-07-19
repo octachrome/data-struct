@@ -162,10 +162,12 @@ TEST(BTreeTest, ThreeLevelTree) {
 	for (int i = 0; i < 20; i++) {
 		ASSERT_STREQ(&TEST_DATA[i*2], b[i].str()) << "Expected element " << i << " to have been stored";
 	}
+
+	ASSERT_EQ(3, b.depth()) << "Expected depth to be 3";
 }
 
 TEST(BTreeTest, LotsOfNodes) {
-	BTree<int, Data, 4> b;
+	BTree<int, Data, 16> b;
 
 	for (int i = 0; i < 200000; i++) {
 		b[i] = Data("test");
@@ -177,10 +179,23 @@ TEST(BTreeTest, LotsOfNodes) {
 }
 
 TEST(BTreeTest, ReverseInsertion) {
-	BTree<int, Data, 4> b;
+	BTree<int, Data, 16> b;
 
-	for (int i = 200000-1; i >=0 ; i--) {
+	for (int i = 200000-1; i >=0; i--) {
 		b[i] = Data("test");
+	}
+
+	for (int i = 0; i < 200000; i++) {
+		ASSERT_TRUE(b.contains(i)) << "Expected element " << i << " to have been stored";
+	}
+}
+
+TEST(BTreeTest, RandomInsertion) {
+	BTree<int, Data, 16> b;
+
+	for (int i = 200000-1; i >=0; i--) {
+		int key = (i * 257) % 200000;
+		b[key] = Data("test");
 	}
 
 	for (int i = 0; i < 200000; i++) {

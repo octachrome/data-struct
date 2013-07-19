@@ -31,6 +31,8 @@ struct Node {
 	virtual Node<K, V, PAGE_SIZE>* split() = 0;
 
 	virtual void print(int indent) = 0;
+
+	virtual int depth() = 0;
 };
 
 template<class K, class V, int PAGE_SIZE>
@@ -179,6 +181,10 @@ struct Leaf : Node<K, V, PAGE_SIZE>, Page<K, V, PAGE_SIZE> {
 			e = e->next;
 		}
 	}
+
+	int depth() {
+		return 1;
+	}
 };
 
 template<class K, class V, int PAGE_SIZE>
@@ -207,11 +213,11 @@ struct Index : Node<K, V, PAGE_SIZE>, Page<K, Node<K, V, PAGE_SIZE>*, PAGE_SIZE>
 			} else {
 				Node<K, V, PAGE_SIZE>* newNode = node->split();
 				insert(newNode->first()->key)->value = newNode;
-				return findOrInsert(key);
+				e = findOrInsert(key);
 			}
 		}
-		if (key < e->key) {
-			e->key = key;
+		if (key < el->key) {
+			el->key = key;
 		}
 		return e;
 	}
@@ -248,6 +254,10 @@ struct Index : Node<K, V, PAGE_SIZE>, Page<K, Node<K, V, PAGE_SIZE>*, PAGE_SIZE>
 			ie->value->print(indent + 1);
 			ie = ie->next;
 		}
+	}
+
+	int depth() {
+		return 1 + this->first_->value->depth();
 	}
 };
 
@@ -317,5 +327,9 @@ public:
 
 	void print() {
 		root_->print(0);
+	}
+
+	int depth() {
+		return root_->depth();
 	}
 };
