@@ -18,12 +18,12 @@ namespace BTree_private
 
 	template<class K, class V, int PAGE_SIZE>
 	struct Page {
-		typedef BTree_Element<K, V> element_t;
+		typedef BTree_Element<K, V> Element;
 
 		int size_;
-		element_t* free_;
-		element_t* first_;
-		element_t data_[PAGE_SIZE];
+		Element* free_;
+		Element* first_;
+		Element data_[PAGE_SIZE];
 
 		Page() {
 			size_ = 0;
@@ -38,8 +38,8 @@ namespace BTree_private
 
 		virtual ~Page() {}
 
-		element_t* p_find(const K& key) {
-			for (element_t* e = first_; e != 0; e = e->next) {
+		Element* p_find(const K& key) {
+			for (Element* e = first_; e != 0; e = e->next) {
 				if (e->key == key) {
 					return e;
 				}
@@ -47,17 +47,17 @@ namespace BTree_private
 			return 0;
 		}
 
-		element_t* insert(const K& key) {
+		Element* insert(const K& key) {
 			if (size_ == PAGE_SIZE) {
-				return element_t::FULL;
+				return Element::FULL;
 			}
 			size_++;
 
-			element_t* e = free_;
+			Element* e = free_;
 			free_ = free_->next;
 			e->key = key;
 
-			element_t* i = p_findInsertPos(key);
+			Element* i = p_findInsertPos(key);
 			if (i == 0) {
 				e->next = first_;
 				first_ = e;
@@ -69,19 +69,19 @@ namespace BTree_private
 			}
 		}
 
-		element_t* p_findInsertPos(const K& key) {
+		Element* p_findInsertPos(const K& key) {
 			if (first_ == 0 || key < first_->key) {
 				return 0;
 			}
-			element_t *i = first_;
+			Element *i = first_;
 			while (i->next != 0 && i->next->key <= key) {
 				i = i->next;
 			}
 			return i;
 		}
 
-		element_t* p_findOrInsert(const K& key) {
-			element_t* e = p_find(key);
+		Element* p_findOrInsert(const K& key) {
+			Element* e = p_find(key);
 			if (e == 0) {
 				e = insert(key);
 			}
@@ -89,8 +89,8 @@ namespace BTree_private
 		}
 
 		void p_remove(const K& key) {
-			element_t* last = 0;
-			for (element_t* e = first_; e != 0; e = e->next) {
+			Element* last = 0;
+			for (Element* e = first_; e != 0; e = e->next) {
 				if (e->key == key) {
 					if (last == 0) {
 						first_ = e->next;
@@ -106,16 +106,16 @@ namespace BTree_private
 		}
 
 		void p_split(Page* newPage) {
-			element_t* lastToKeep;
-			element_t* firstToRemove = this->first_;
+			Element* lastToKeep;
+			Element* firstToRemove = this->first_;
 			for (int i = 0; i < PAGE_SIZE/2; i++) {
 				lastToKeep = firstToRemove;
 				firstToRemove = firstToRemove->next;
 			}
 			lastToKeep->next = 0;
 
-			element_t* lastToRemove;
-			for (element_t *e = firstToRemove; e != 0; e = e->next) {
+			Element* lastToRemove;
+			for (Element *e = firstToRemove; e != 0; e = e->next) {
 				newPage->insert(e->key)->value = e->value;
 				lastToRemove = e;
 			}
@@ -128,6 +128,7 @@ namespace BTree_private
 
 	template<class K, class V, int PAGE_SIZE>
 	class BTree_Node {
+	private:
 		typedef BTree_Element<K, V> Element;
 		typedef BTree_Node<K, V, PAGE_SIZE> Self;
 
@@ -151,13 +152,13 @@ namespace BTree_private
 
 	template<class K, class V, int PAGE_SIZE>
 	struct Leaf : BTree_Node<K, V, PAGE_SIZE>, Page<K, V, PAGE_SIZE> {
-		typedef BTree_Element<K, V> element_t;
+		typedef BTree_Element<K, V> Element;
 
-		element_t* find(const K& key) {
+		Element* find(const K& key) {
 			return p_find(key);
 		}
 
-		element_t* findOrInsert(const K& key) {
+		Element* findOrInsert(const K& key) {
 			return p_findOrInsert(key);
 		}
 
@@ -165,7 +166,7 @@ namespace BTree_private
 			p_remove(key);
 		}
 
-		element_t* first() {
+		Element* first() {
 			return this->first_;
 		}
 
@@ -176,7 +177,7 @@ namespace BTree_private
 		}
 
 		void print(int indent) {
-			element_t* e = this->first_;
+			Element* e = this->first_;
 			while (e != 0) {
 				for (int i = 0; i < indent; i++) {
 					std::cout << "  ";
@@ -194,27 +195,27 @@ namespace BTree_private
 	template<class K, class V, int PAGE_SIZE>
 	struct Index : BTree_Node<K, V, PAGE_SIZE>, Page<K, BTree_Node<K, V, PAGE_SIZE>*, PAGE_SIZE> {
 		typedef BTree_Node<K, V, PAGE_SIZE> Node;
-		typedef BTree_Element<K, BTree_Node<K, V, PAGE_SIZE>*> indexelement_t;
-		typedef BTree_Element<K, V> element_t;
+		typedef BTree_Element<K, BTree_Node<K, V, PAGE_SIZE>*> NodeElement;
+		typedef BTree_Element<K, V> Element;
 
-		element_t* find(const K& key) {
-			indexelement_t *el = p_findInsertPos(key);
+		Element* find(const K& key) {
+			NodeElement *el = p_findInsertPos(key);
 			if (el == 0) {
 				el = this->first_;
 			}
 			return el->value->find(key);
 		}
 
-		element_t* findOrInsert(const K& key) {
-			indexelement_t* el = p_findInsertPos(key);
+		Element* findOrInsert(const K& key) {
+			NodeElement* el = p_findInsertPos(key);
 			if (el == 0) {
 				el = this->first_;
 			}
 			Node* node = el->value;
-			element_t* e = node->findOrInsert(key);
-			if (e == element_t::FULL) {
+			Element* e = node->findOrInsert(key);
+			if (e == Element::FULL) {
 				if (this->size_ == PAGE_SIZE) {
-					return element_t::FULL;
+					return Element::FULL;
 				} else {
 					Node* newNode = node->split();
 					insert(newNode->first()->key)->value = newNode;
@@ -228,14 +229,14 @@ namespace BTree_private
 		}
 
 		void remove(const K& key) {
-			indexelement_t* el = p_findInsertPos(key);
+			NodeElement* el = p_findInsertPos(key);
 			if (el == 0) {
 				el = this->first_;
 			}
 			return el->value->remove(key);
 		}
 
-		element_t* first() {
+		Element* first() {
 			return this->first_->value->first();
 		}
 
@@ -250,7 +251,7 @@ namespace BTree_private
 		}
 
 		void print(int indent) {
-			indexelement_t* ie = this->first_;
+			NodeElement* ie = this->first_;
 			while (ie != 0) {
 				for (int i = 0; i < indent; i++) {
 					std::cout << "  ";
