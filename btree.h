@@ -29,6 +29,9 @@ namespace BTree_private
 	 * A singly-linked key-value store. The storage elements are statically allocated within the page. The elements are
 	 * stored in order of increasing key. Pages are used in the BTree to store both data (in Leaves) and pointers to
 	 * other pages (in Indexes).
+	 * @tparam K the type of key the elements in the page will be associated with
+	 * @tparam V the type of value stored in the page
+	 * @tparam PAGE_SIZE the number of elements stored within the page
 	 */
 	template<class K, class V, int PAGE_SIZE>
 	class BTree_Page
@@ -192,7 +195,8 @@ namespace BTree_private
 
 			Element* lastToRemove;
 			for (Element *e = firstToRemove; e != 0; e = e->next) {
-				newPage.insert(e->key)->value = e->value;
+				Element* newElement = newPage.insert(e->key);
+				newElement->value = e->value;
 				lastToRemove = e;
 			}
 
@@ -358,7 +362,8 @@ namespace BTree_private
 
 		void addPage(Node* p)
 		{
-			page.insert(p->first()->key)->value = p;
+			NodeElement* el = page.insert(p->first()->key);
+			el->value = p;
 		}
 
 		void print(int indent) const
