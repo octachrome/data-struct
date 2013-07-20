@@ -57,7 +57,7 @@ TEST(BTreeTest, Iterate) {
 	b[3] = Data("three");
 	b[5] = Data("five");
 
-	BTree<int, Data>::iterator i = b.begin();
+	BTree<int, Data>::Iterator i = b.begin();
 
 	ASSERT_EQ(3, i->key) << "Expected 3 to be next";
 	ASSERT_STREQ("three", i->value.str()) << "Expected the correct value";
@@ -202,3 +202,8 @@ TEST(BTreeTest, RandomInsertion) {
 		ASSERT_TRUE(b.contains(i)) << "Expected element " << i << " to have been stored";
 	}
 }
+
+// refactor
+// delete and combine nodes
+// proper iterators
+// proper destruction
