@@ -117,14 +117,25 @@ TEST(BTreeTest, RecycleElements) {
 	}
 }
 
-void allocateOnePageOfFour() {
+void allocateTree(Data& fill, int count) {
 	BTree<int, Data, 4> b;
+	for (int i = 0; i < count; i++) {
+		b[i] = fill;
+	}
 }
 
 TEST(BTreeTest, ValueDestructorCalled) {
+	Data fill("test");
 	totalDestroyed = 0;
-	allocateOnePageOfFour();
+	allocateTree(fill, 0);
 	ASSERT_EQ(4, totalDestroyed) << "Expected every element in the page to have been destroyed";
+}
+
+TEST(BTreeTest, ValueDestructorCalledForDeepTree) {
+	Data fill("test");
+	totalDestroyed = 0;
+	allocateTree(fill, 16);
+	ASSERT_EQ(28, totalDestroyed) << "Expected 28 elements (7 pages) of elements to have been destroyed";
 }
 
 char TEST_DATA[20*2];
@@ -205,4 +216,3 @@ TEST(BTreeTest, RandomInsertion) {
 
 // delete and combine nodes
 // proper iterators
-// proper destruction

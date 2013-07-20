@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstring>
 
 #define DEFAULT_PAGE_SIZE 16
 
@@ -64,6 +65,8 @@ namespace BTree_private
 		{
 			size_ = 0;
 			first_ = 0;
+
+			memset(data_, 0, sizeof(Element) * PAGE_SIZE);
 
 			free_ = &data_[0];
 			for (int i = 0; i < PAGE_SIZE; i++) {
@@ -307,6 +310,15 @@ namespace BTree_private
 		Page page;
 
 	public:
+		~Index()
+		{
+			for (NodeElement* e = page.first(); e != 0; e = e->next) {
+				if (e->value != 0) {
+					delete e->value;
+				}
+			}
+		}
+
 		Element* find(const K& key) const
 		{
 			NodeElement *el = page.findInsertPos(key);
@@ -345,7 +357,7 @@ namespace BTree_private
 			if (el == 0) {
 				el = page.first();
 			}
-			return el->value->remove(key);
+			el->value->remove(key);
 		}
 
 		Element* first() const
