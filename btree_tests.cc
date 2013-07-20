@@ -203,7 +203,6 @@ TEST(BTreeTest, RandomInsertion) {
 	}
 }
 
-// refactor
 // delete and combine nodes
 // proper iterators
 // proper destruction

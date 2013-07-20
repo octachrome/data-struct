@@ -4,30 +4,61 @@
 
 namespace BTree_private
 {
+	/**
+	 * A basic singly-linked storage element which holds a key and corresponding value. Page data is stored in Elements.
+	 * @tparam K type of the key
+	 * @tparam V type of the value
+	 */
 	template<class K, class V>
-	struct BTree_Element {
-		static BTree_Element* FULL;
+	struct BTree_Element
+	{
+		static BTree_Element* const FULL;
 
 		BTree_Element* next;
 		K key;
 		V value;
 	};
 
+	/**
+	 * A marker element retuned by Page member functions to indicate that the page is full.
+	 */
 	template<class K, class V>
-	BTree_Element<K, V>* BTree_Element<K, V>::FULL = (BTree_Element<K, V>*) 1;
+	BTree_Element<K, V>* const BTree_Element<K, V>::FULL = (BTree_Element<K, V>*) 1;
 
+	/**
+	 * A singly-linked key-value store. The storage elements are statically allocated within the page. The elements are
+	 * stored in order of increasing key. Pages are used in the BTree to store both data (in Leaves) and pointers to
+	 * other pages (in Indexes).
+	 */
 	template<class K, class V, int PAGE_SIZE>
-	class BTree_Page {
+	class BTree_Page
+	{
 	private:
 		typedef BTree_Element<K, V> Element;
 
-	public:
+		/**
+		 * The number of elements holding data within the page.
+		 */
 		int size_;
+		/**
+		 * A pointer to the first free element within the page.
+		 */
 		Element* free_;
+		/**
+		 * A pointer to the first data-holding element within the page.
+		 */
 		Element* first_;
+		/**
+		 * The elements of the page. Some may be free, others may contain data.
+		 */
 		Element data_[PAGE_SIZE];
 
-		BTree_Page() {
+	public:
+		/**
+		 * Page constructor. Initialises the free list to contain all the elements.
+		 */
+		BTree_Page()
+		{
 			size_ = 0;
 			first_ = 0;
 
@@ -38,11 +69,21 @@ namespace BTree_private
 			data_[PAGE_SIZE-1].next = 0;
 		}
 
-		Element* first() const {
+		/**
+		 * @return the first data-holding element (the one with the lowest key)
+		 */
+		Element* first() const
+		{
 			return first_;
 		}
 
-		Element* find(const K& key) const {
+		/**
+		 * Locate an element with the given key.
+		 * @param key the key to search on
+		 * @return an element containing the key, or 0 if there is none
+		 */
+		Element* find(const K& key) const
+		{
 			for (Element* e = first_; e != 0; e = e->next) {
 				if (e->key == key) {
 					return e;
@@ -51,7 +92,14 @@ namespace BTree_private
 			return 0;
 		}
 
-		Element* insert(const K& key) {
+		/**
+		 * Assign an element to hold a value associated with the given key, and insert it into the linked list at the
+		 * correct position.
+		 * @param key the key with which the value will be associated
+		 * @return the element which will hold the value
+		 */
+		Element* insert(const K& key)
+		{
 			if (size_ == PAGE_SIZE) {
 				return Element::FULL;
 			}
@@ -73,7 +121,14 @@ namespace BTree_private
 			}
 		}
 
-		Element* findInsertPos(const K& key) const {
+		/**
+		 * Find the element after which the given key should be inserted. If the key is less than the smallest key in
+		 * the list, returns 0.
+		 * @param key the key to be inserted
+		 * @return the element after which given key should be inserted, or 0 if it should be inserted before the first
+		 */
+		Element* findInsertPos(const K& key) const
+		{
 			if (first_ == 0 || key < first_->key) {
 				return 0;
 			}
@@ -84,7 +139,14 @@ namespace BTree_private
 			return i;
 		}
 
-		Element* findOrInsert(const K& key) {
+		/**
+		 * Search for an element with the given key; if found, return it, otherwise insert a new element, and return
+		 * that instead.
+		 * @param key the key to find or insert
+		 * @return an element associated with the key
+		 */
+		Element* findOrInsert(const K& key)
+		{
 			Element* e = find(key);
 			if (e == 0) {
 				e = insert(key);
@@ -92,7 +154,12 @@ namespace BTree_private
 			return e;
 		}
 
-		void remove(const K& key) {
+		/**
+		 * Remove the a element associated with the given key, if it exists.
+		 * @param key the key to remove
+		 */
+		void remove(const K& key)
+		{
 			Element* last = 0;
 			for (Element* e = first_; e != 0; e = e->next) {
 				if (e->key == key) {
@@ -109,7 +176,12 @@ namespace BTree_private
 			}
 		}
 
-		void split(BTree_Page* newPage) {
+		/**
+		 * Remove PAGE_SIZE/2 elements from this page and insert them into the given page.
+		 * @param newPage the page into which the removed elements should be inserted
+		 */
+		void split(BTree_Page& newPage)
+		{
 			Element* lastToKeep;
 			Element* firstToRemove = this->first_;
 			for (int i = 0; i < PAGE_SIZE/2; i++) {
@@ -120,7 +192,7 @@ namespace BTree_private
 
 			Element* lastToRemove;
 			for (Element *e = firstToRemove; e != 0; e = e->next) {
-				newPage->insert(e->key)->value = e->value;
+				newPage.insert(e->key)->value = e->value;
 				lastToRemove = e;
 			}
 
@@ -128,10 +200,19 @@ namespace BTree_private
 			free_ = firstToRemove;
 			size_ = PAGE_SIZE/2;
 		}
+
+		/**
+		 * @return true if the page is full
+		 */
+		bool full()
+		{
+			return size_ == PAGE_SIZE;
+		}
 	};
 
 	template<class K, class V, int PAGE_SIZE>
-	class BTree_Node {
+	class BTree_Node
+	{
 	private:
 		typedef BTree_Element<K, V> Element;
 		typedef BTree_Node<K, V, PAGE_SIZE> Self;
@@ -155,7 +236,8 @@ namespace BTree_private
 	};
 
 	template<class K, class V, int PAGE_SIZE>
-	class Leaf : public BTree_Node<K, V, PAGE_SIZE> {
+	class Leaf : public BTree_Node<K, V, PAGE_SIZE>
+	{
 	private:
 		typedef BTree_Element<K, V> Element;
 		typedef BTree_Page<K, V, PAGE_SIZE> Page;
@@ -163,29 +245,35 @@ namespace BTree_private
 		Page page;
 
 	public:
-		Element* find(const K& key) const {
+		Element* find(const K& key) const
+		{
 			return page.find(key);
 		}
 
-		Element* findOrInsert(const K& key) {
+		Element* findOrInsert(const K& key)
+		{
 			return page.findOrInsert(key);
 		}
 
-		void remove(const K& key) {
+		void remove(const K& key)
+		{
 			page.remove(key);
 		}
 
-		Element* first() const {
-			return page.first_;
+		Element* first() const
+		{
+			return page.first();
 		}
 
-		Leaf* split() {
+		Leaf* split()
+		{
 			Leaf* newLeaf = new Leaf;
-			page.split(&newLeaf->page);
+			page.split(newLeaf->page);
 			return newLeaf;
 		}
 
-		void print(int indent) const {
+		void print(int indent) const
+		{
 			const Element* e = page.first();
 			while (e != 0) {
 				for (int i = 0; i < indent; i++) {
@@ -196,13 +284,15 @@ namespace BTree_private
 			}
 		}
 
-		int depth() const {
+		int depth() const
+		{
 			return 1;
 		}
 	};
 
 	template<class K, class V, int PAGE_SIZE>
-	class Index : public BTree_Node<K, V, PAGE_SIZE> {
+	class Index : public BTree_Node<K, V, PAGE_SIZE>
+	{
 	private:
 		typedef BTree_Page<K, BTree_Node<K, V, PAGE_SIZE>*, PAGE_SIZE> Page;
 		typedef BTree_Element<K, BTree_Node<K, V, PAGE_SIZE>*> NodeElement;
@@ -213,15 +303,17 @@ namespace BTree_private
 		Page page;
 
 	public:
-		Element* find(const K& key) const {
+		Element* find(const K& key) const
+		{
 			NodeElement *el = page.findInsertPos(key);
 			if (el == 0) {
-				el = page.first_;
+				el = page.first();
 			}
 			return el->value->find(key);
 		}
 
-		Element* findOrInsert(const K& key) {
+		Element* findOrInsert(const K& key)
+		{
 			NodeElement* el = page.findInsertPos(key);
 			if (el == 0) {
 				el = page.first();
@@ -229,7 +321,7 @@ namespace BTree_private
 			Node* node = el->value;
 			Element* e = node->findOrInsert(key);
 			if (e == Element::FULL) {
-				if (page.size_ == PAGE_SIZE) {
+				if (page.full()) {
 					return Element::FULL;
 				} else {
 					Node* newNode = node->split();
@@ -243,7 +335,8 @@ namespace BTree_private
 			return e;
 		}
 
-		void remove(const K& key) {
+		void remove(const K& key)
+		{
 			NodeElement* el = page.findInsertPos(key);
 			if (el == 0) {
 				el = page.first();
@@ -251,21 +344,25 @@ namespace BTree_private
 			return el->value->remove(key);
 		}
 
-		Element* first() const {
+		Element* first() const
+		{
 			return page.first()->value->first();
 		}
 
-		Index* split() {
+		Index* split()
+		{
 			Index* newIndex = new Index;
-			page.split(&newIndex->page);
+			page.split(newIndex->page);
 			return newIndex;
 		}
 
-		void addPage(Node* p) {
+		void addPage(Node* p)
+		{
 			page.insert(p->first()->key)->value = p;
 		}
 
-		void print(int indent) const {
+		void print(int indent) const
+		{
 			NodeElement* ie = page.first();
 			while (ie != 0) {
 				for (int i = 0; i < indent; i++) {
@@ -277,40 +374,47 @@ namespace BTree_private
 			}
 		}
 
-		int depth() const {
+		int depth() const
+		{
 			return 1 + page.first()->value->depth();
 		}
 	};
 
 	template<class K, class V>
-	class BTree_Iterator {
+	class BTree_Iterator
+	{
 	private:
 		typedef BTree_Element<K, V> Element;
 
 		Element* curr_;
 
 	public:
-		BTree_Iterator(Element* first) {
+		BTree_Iterator(Element* first)
+		{
 			curr_ = first;
 		}
 
-		const Element& operator*() {
+		const Element& operator*()
+		{
 			return *curr_;
 		}
 
-		const BTree_Iterator& operator++() {
+		const BTree_Iterator& operator++()
+		{
 			curr_ = curr_->next;
 			return *this;
 		}
 
-		const Element* operator->() {
+		const Element* operator->()
+		{
 			return curr_;
 		}
 	};
 }; // namespace BTree_private
 
 template<class K, class V, int PAGE_SIZE = DEFAULT_PAGE_SIZE>
-class BTree {
+class BTree
+{
 	typedef BTree_private::BTree_Node<K, V, PAGE_SIZE> Node;
 	typedef BTree_private::Leaf<K, V, PAGE_SIZE> Leaf;
 	typedef BTree_private::Index<K, V, PAGE_SIZE> Index;
@@ -321,15 +425,18 @@ class BTree {
 public:
 	typedef BTree_private::BTree_Iterator<K, V> Iterator;
 
-	BTree() {
+	BTree()
+	{
 		root_ = new Leaf;
 	}
 
-	~BTree() {
+	~BTree()
+	{
 		delete root_;
 	}
 
-	V& operator[](const K& key) {
+	V& operator[](const K& key)
+	{
 		Element *e = root_->findOrInsert(key);
 		if (e == Element::FULL) {
 			Node* newPage = root_->split();
@@ -342,23 +449,28 @@ public:
 		return e->value;
 	}
 
-	bool contains(const K& key) {
+	bool contains(const K& key)
+	{
 		return root_->find(key) != 0;
 	}
 
-	const Iterator begin() {
+	const Iterator begin()
+	{
 		return Iterator(root_->first());
 	}
 
-	void remove(const K& key) {
+	void remove(const K& key)
+	{
 		root_->remove(key);
 	}
 
-	void print() {
+	void print()
+	{
 		root_->print(0);
 	}
 
-	int depth() {
+	int depth()
+	{
 		return root_->depth();
 	}
 };
