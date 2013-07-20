@@ -127,20 +127,22 @@ namespace BTree_private
 	};
 
 	template<class K, class V, int PAGE_SIZE>
-	struct Node {
-		virtual ~Node() {}
+	class BTree_Node {
+		typedef Element<K, V> Element;
+		typedef BTree_Node<K, V> Self;
 
-		typedef Element<K, V> element;
+	public:
+		virtual ~BTree_Node() {}
 
-		virtual element* find(const K& key) = 0;
+		virtual Element* find(const K& key) = 0;
 
-		virtual element* findOrInsert(const K& key) = 0;
+		virtual Element* findOrInsert(const K& key) = 0;
 
 		virtual void remove(const K& key) = 0;
 
-		virtual element* first() = 0;
+		virtual Element* first() = 0;
 
-		virtual Node<K, V, PAGE_SIZE>* split() = 0;
+		virtual Self* split() = 0;
 
 		virtual void print(int indent) = 0;
 
@@ -148,7 +150,7 @@ namespace BTree_private
 	};
 
 	template<class K, class V, int PAGE_SIZE>
-	struct Leaf : Node<K, V, PAGE_SIZE>, Page<K, V, PAGE_SIZE> {
+	struct Leaf : BTree_Node<K, V, PAGE_SIZE>, Page<K, V, PAGE_SIZE> {
 		typedef Element<K, V> element_t;
 
 		element_t* find(const K& key) {
@@ -190,8 +192,9 @@ namespace BTree_private
 	};
 
 	template<class K, class V, int PAGE_SIZE>
-	struct Index : Node<K, V, PAGE_SIZE>, Page<K, Node<K, V, PAGE_SIZE>*, PAGE_SIZE> {
-		typedef Element<K, Node<K, V, PAGE_SIZE>*> indexelement_t;
+	struct Index : BTree_Node<K, V, PAGE_SIZE>, Page<K, BTree_Node<K, V, PAGE_SIZE>*, PAGE_SIZE> {
+		typedef BTree_Node<K, V, PAGE_SIZE> Node;
+		typedef Element<K, BTree_Node<K, V, PAGE_SIZE>*> indexelement_t;
 		typedef Element<K, V> element_t;
 
 		element_t* find(const K& key) {
@@ -207,13 +210,13 @@ namespace BTree_private
 			if (el == 0) {
 				el = this->first_;
 			}
-			Node<K, V, PAGE_SIZE>* node = el->value;
+			Node* node = el->value;
 			element_t* e = node->findOrInsert(key);
 			if (e == element_t::FULL) {
 				if (this->size_ == PAGE_SIZE) {
 					return element_t::FULL;
 				} else {
-					Node<K, V, PAGE_SIZE>* newNode = node->split();
+					Node* newNode = node->split();
 					insert(newNode->first()->key)->value = newNode;
 					e = findOrInsert(key);
 				}
@@ -242,7 +245,7 @@ namespace BTree_private
 			return newIndex;
 		}
 
-		void addPage(Node<K, V, PAGE_SIZE>* page) {
+		void addPage(Node* page) {
 			insert(page->first()->key)->value = page;
 		}
 
@@ -290,7 +293,7 @@ namespace BTree_private
 
 template<class K, class V, int PAGE_SIZE = DEFAULT_PAGE_SIZE>
 class BTree {
-	typedef BTree_private::Node<K, V, PAGE_SIZE> Node;
+	typedef BTree_private::BTree_Node<K, V, PAGE_SIZE> Node;
 	typedef BTree_private::Leaf<K, V, PAGE_SIZE> Leaf;
 	typedef BTree_private::Index<K, V, PAGE_SIZE> Index;
 	typedef BTree_private::Element<K, V> Element;
