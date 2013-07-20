@@ -5,20 +5,20 @@
 namespace BTree_private
 {
 	template<class K, class V>
-	struct Element {
-		static Element* FULL;
+	struct BTree_Element {
+		static BTree_Element* FULL;
 
-		Element* next;
+		BTree_Element* next;
 		K key;
 		V value;
 	};
 
 	template<class K, class V>
-	Element<K, V>* Element<K, V>::FULL = (Element<K, V>*) 1;
+	BTree_Element<K, V>* BTree_Element<K, V>::FULL = (BTree_Element<K, V>*) 1;
 
 	template<class K, class V, int PAGE_SIZE>
 	struct Page {
-		typedef Element<K, V> element_t;
+		typedef BTree_Element<K, V> element_t;
 
 		int size_;
 		element_t* free_;
@@ -128,8 +128,8 @@ namespace BTree_private
 
 	template<class K, class V, int PAGE_SIZE>
 	class BTree_Node {
-		typedef Element<K, V> Element;
-		typedef BTree_Node<K, V> Self;
+		typedef BTree_Element<K, V> Element;
+		typedef BTree_Node<K, V, PAGE_SIZE> Self;
 
 	public:
 		virtual ~BTree_Node() {}
@@ -151,7 +151,7 @@ namespace BTree_private
 
 	template<class K, class V, int PAGE_SIZE>
 	struct Leaf : BTree_Node<K, V, PAGE_SIZE>, Page<K, V, PAGE_SIZE> {
-		typedef Element<K, V> element_t;
+		typedef BTree_Element<K, V> element_t;
 
 		element_t* find(const K& key) {
 			return p_find(key);
@@ -194,8 +194,8 @@ namespace BTree_private
 	template<class K, class V, int PAGE_SIZE>
 	struct Index : BTree_Node<K, V, PAGE_SIZE>, Page<K, BTree_Node<K, V, PAGE_SIZE>*, PAGE_SIZE> {
 		typedef BTree_Node<K, V, PAGE_SIZE> Node;
-		typedef Element<K, BTree_Node<K, V, PAGE_SIZE>*> indexelement_t;
-		typedef Element<K, V> element_t;
+		typedef BTree_Element<K, BTree_Node<K, V, PAGE_SIZE>*> indexelement_t;
+		typedef BTree_Element<K, V> element_t;
 
 		element_t* find(const K& key) {
 			indexelement_t *el = p_findInsertPos(key);
@@ -269,14 +269,16 @@ namespace BTree_private
 	template<class K, class V>
 	class BTree_Iterator {
 	private:
-		Element<K, V>* curr_;
+		typedef BTree_Element<K, V> Element;
+
+		Element* curr_;
 
 	public:
-		BTree_Iterator(Element<K, V>* first) {
+		BTree_Iterator(Element* first) {
 			curr_ = first;
 		}
 
-		const Element<K, V>& operator*() {
+		const Element& operator*() {
 			return *curr_;
 		}
 
@@ -285,7 +287,7 @@ namespace BTree_private
 			return *this;
 		}
 
-		const Element<K, V>* operator->() {
+		const Element* operator->() {
 			return curr_;
 		}
 	};
@@ -296,7 +298,7 @@ class BTree {
 	typedef BTree_private::BTree_Node<K, V, PAGE_SIZE> Node;
 	typedef BTree_private::Leaf<K, V, PAGE_SIZE> Leaf;
 	typedef BTree_private::Index<K, V, PAGE_SIZE> Index;
-	typedef BTree_private::Element<K, V> Element;
+	typedef BTree_private::BTree_Element<K, V> Element;
 
 	Node* root_;
 
