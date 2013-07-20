@@ -40,6 +40,10 @@ namespace BTree_private
 
 		virtual ~BTree_Page() {}
 
+		const Element* first() const {
+			return first_;
+		}
+
 		Element* p_find(const K& key) {
 			for (Element* e = first_; e != 0; e = e->next) {
 				if (e->key == key) {
@@ -153,35 +157,38 @@ namespace BTree_private
 	};
 
 	template<class K, class V, int PAGE_SIZE>
-	class Leaf : public BTree_Node<K, V, PAGE_SIZE>, BTree_Page<K, V, PAGE_SIZE> {
+	class Leaf : public BTree_Node<K, V, PAGE_SIZE> {
 	private:
 		typedef BTree_Element<K, V> Element;
+		typedef BTree_Page<K, V, PAGE_SIZE> Page;
+
+		Page page;
 
 	public:
 		Element* find(const K& key) {
-			return p_find(key);
+			return page.p_find(key);
 		}
 
 		Element* findOrInsert(const K& key) {
-			return p_findOrInsert(key);
+			return page.p_findOrInsert(key);
 		}
 
 		void remove(const K& key) {
-			p_remove(key);
+			page.p_remove(key);
 		}
 
 		Element* first() {
-			return this->first_;
+			return page.first_;
 		}
 
 		Leaf* split() {
 			Leaf* newLeaf = new Leaf;
-			p_split(newLeaf);
+			page.p_split(&newLeaf->page);
 			return newLeaf;
 		}
 
 		void print(int indent) {
-			Element* e = this->first_;
+			const Element* e = page.first();
 			while (e != 0) {
 				for (int i = 0; i < indent; i++) {
 					std::cout << "  ";
