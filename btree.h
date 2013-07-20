@@ -17,9 +17,11 @@ namespace BTree_private
 	BTree_Element<K, V>* BTree_Element<K, V>::FULL = (BTree_Element<K, V>*) 1;
 
 	template<class K, class V, int PAGE_SIZE>
-	struct Page {
+	class Page {
+	private:
 		typedef BTree_Element<K, V> Element;
 
+	public:
 		int size_;
 		Element* free_;
 		Element* first_;
@@ -151,9 +153,11 @@ namespace BTree_private
 	};
 
 	template<class K, class V, int PAGE_SIZE>
-	struct Leaf : BTree_Node<K, V, PAGE_SIZE>, Page<K, V, PAGE_SIZE> {
+	class Leaf : public BTree_Node<K, V, PAGE_SIZE>, Page<K, V, PAGE_SIZE> {
+	private:
 		typedef BTree_Element<K, V> Element;
 
+	public:
 		Element* find(const K& key) {
 			return p_find(key);
 		}
@@ -193,11 +197,13 @@ namespace BTree_private
 	};
 
 	template<class K, class V, int PAGE_SIZE>
-	struct Index : BTree_Node<K, V, PAGE_SIZE>, Page<K, BTree_Node<K, V, PAGE_SIZE>*, PAGE_SIZE> {
+	class Index : public BTree_Node<K, V, PAGE_SIZE>, Page<K, BTree_Node<K, V, PAGE_SIZE>*, PAGE_SIZE> {
+	private:
 		typedef BTree_Node<K, V, PAGE_SIZE> Node;
 		typedef BTree_Element<K, BTree_Node<K, V, PAGE_SIZE>*> NodeElement;
 		typedef BTree_Element<K, V> Element;
 
+	public:
 		Element* find(const K& key) {
 			NodeElement *el = p_findInsertPos(key);
 			if (el == 0) {
