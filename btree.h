@@ -38,13 +38,11 @@ namespace BTree_private
 			data_[PAGE_SIZE-1].next = 0;
 		}
 
-		virtual ~BTree_Page() {}
-
-		const Element* first() const {
+		Element* first() const {
 			return first_;
 		}
 
-		Element* p_find(const K& key) {
+		Element* p_find(const K& key) const {
 			for (Element* e = first_; e != 0; e = e->next) {
 				if (e->key == key) {
 					return e;
@@ -75,7 +73,7 @@ namespace BTree_private
 			}
 		}
 
-		Element* p_findInsertPos(const K& key) {
+		Element* p_findInsertPos(const K& key) const {
 			if (first_ == 0 || key < first_->key) {
 				return 0;
 			}
@@ -141,19 +139,19 @@ namespace BTree_private
 	public:
 		virtual ~BTree_Node() {}
 
-		virtual Element* find(const K& key) = 0;
+		virtual Element* find(const K& key) const = 0;
 
 		virtual Element* findOrInsert(const K& key) = 0;
 
 		virtual void remove(const K& key) = 0;
 
-		virtual Element* first() = 0;
+		virtual Element* first() const = 0;
 
 		virtual Self* split() = 0;
 
-		virtual void print(int indent) = 0;
+		virtual void print(int indent) const = 0;
 
-		virtual int depth() = 0;
+		virtual int depth() const = 0;
 	};
 
 	template<class K, class V, int PAGE_SIZE>
@@ -165,7 +163,7 @@ namespace BTree_private
 		Page page;
 
 	public:
-		Element* find(const K& key) {
+		Element* find(const K& key) const {
 			return page.p_find(key);
 		}
 
@@ -177,7 +175,7 @@ namespace BTree_private
 			page.p_remove(key);
 		}
 
-		Element* first() {
+		Element* first() const {
 			return page.first_;
 		}
 
@@ -187,7 +185,7 @@ namespace BTree_private
 			return newLeaf;
 		}
 
-		void print(int indent) {
+		void print(int indent) const {
 			const Element* e = page.first();
 			while (e != 0) {
 				for (int i = 0; i < indent; i++) {
@@ -198,7 +196,7 @@ namespace BTree_private
 			}
 		}
 
-		int depth() {
+		int depth() const {
 			return 1;
 		}
 	};
@@ -211,7 +209,7 @@ namespace BTree_private
 		typedef BTree_Element<K, V> Element;
 
 	public:
-		Element* find(const K& key) {
+		Element* find(const K& key) const {
 			NodeElement *el = p_findInsertPos(key);
 			if (el == 0) {
 				el = this->first_;
@@ -249,7 +247,7 @@ namespace BTree_private
 			return el->value->remove(key);
 		}
 
-		Element* first() {
+		Element* first() const {
 			return this->first_->value->first();
 		}
 
@@ -263,7 +261,7 @@ namespace BTree_private
 			insert(page->first()->key)->value = page;
 		}
 
-		void print(int indent) {
+		void print(int indent) const {
 			NodeElement* ie = this->first_;
 			while (ie != 0) {
 				for (int i = 0; i < indent; i++) {
@@ -275,7 +273,7 @@ namespace BTree_private
 			}
 		}
 
-		int depth() {
+		int depth() const {
 			return 1 + this->first_->value->depth();
 		}
 	};
