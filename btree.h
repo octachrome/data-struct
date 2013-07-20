@@ -17,7 +17,7 @@ namespace BTree_private
 	BTree_Element<K, V>* BTree_Element<K, V>::FULL = (BTree_Element<K, V>*) 1;
 
 	template<class K, class V, int PAGE_SIZE>
-	class Page {
+	class BTree_Page {
 	private:
 		typedef BTree_Element<K, V> Element;
 
@@ -27,7 +27,7 @@ namespace BTree_private
 		Element* first_;
 		Element data_[PAGE_SIZE];
 
-		Page() {
+		BTree_Page() {
 			size_ = 0;
 			first_ = 0;
 
@@ -38,7 +38,7 @@ namespace BTree_private
 			data_[PAGE_SIZE-1].next = 0;
 		}
 
-		virtual ~Page() {}
+		virtual ~BTree_Page() {}
 
 		Element* p_find(const K& key) {
 			for (Element* e = first_; e != 0; e = e->next) {
@@ -107,7 +107,7 @@ namespace BTree_private
 			}
 		}
 
-		void p_split(Page* newPage) {
+		void p_split(BTree_Page* newPage) {
 			Element* lastToKeep;
 			Element* firstToRemove = this->first_;
 			for (int i = 0; i < PAGE_SIZE/2; i++) {
@@ -153,7 +153,7 @@ namespace BTree_private
 	};
 
 	template<class K, class V, int PAGE_SIZE>
-	class Leaf : public BTree_Node<K, V, PAGE_SIZE>, Page<K, V, PAGE_SIZE> {
+	class Leaf : public BTree_Node<K, V, PAGE_SIZE>, BTree_Page<K, V, PAGE_SIZE> {
 	private:
 		typedef BTree_Element<K, V> Element;
 
@@ -197,7 +197,7 @@ namespace BTree_private
 	};
 
 	template<class K, class V, int PAGE_SIZE>
-	class Index : public BTree_Node<K, V, PAGE_SIZE>, Page<K, BTree_Node<K, V, PAGE_SIZE>*, PAGE_SIZE> {
+	class Index : public BTree_Node<K, V, PAGE_SIZE>, BTree_Page<K, BTree_Node<K, V, PAGE_SIZE>*, PAGE_SIZE> {
 	private:
 		typedef BTree_Node<K, V, PAGE_SIZE> Node;
 		typedef BTree_Element<K, BTree_Node<K, V, PAGE_SIZE>*> NodeElement;
