@@ -5,7 +5,11 @@
 static int totalCreated = 0;
 static int totalDestroyed = 0;
 
-class Data {
+class Base {
+	virtual void v() = 0;
+};
+
+class Data : public Base {
 	char str_[100];
 public:
 	Data() {
@@ -26,6 +30,11 @@ public:
 
 	int compare(Data& d2) const {
 		return strcmp(str_, d2.str_);
+	}
+
+	void v()
+	{
+
 	}
 };
 
@@ -252,7 +261,11 @@ TEST(BTreeTest, CombinePages) {
 	// First page contains 2, 3, 4
 }
 
+TEST(BTreeTest, ObjectCorruption) {
+	BTree<int, Data, 4> b;
+	b[0].v();
+}
+
 // remove an element which requires a merge with the preceeding node
 
 // proper iterators
-// memset bug

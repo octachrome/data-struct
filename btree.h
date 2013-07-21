@@ -66,8 +66,6 @@ namespace BTree_private
 			size_ = 0;
 			first_ = 0;
 
-			memset(data_, 0, sizeof(Element) * PAGE_SIZE);
-
 			free_ = &data_[0];
 			for (int i = 0; i < PAGE_SIZE; i++) {
 				data_[i].next = &data_[i+1];
