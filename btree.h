@@ -179,6 +179,7 @@ namespace BTree_private
 					size_--;
 					return;
 				}
+				last = e;
 			}
 		}
 
@@ -275,6 +276,12 @@ namespace BTree_private
 		 * the number of data elements.
 		 */
 		virtual int count() const = 0;
+
+		/**
+		 * Used to reduce the height of the tree when enough elements are removed from it. If this function returns a
+		 * value, it means that this node has a single child, which can be a replacement for the node itself.
+		 */
+		virtual BTree_Node* replaceChild() = 0;
 	};
 
 	template<class K, class V, int PAGE_SIZE>
@@ -348,6 +355,12 @@ namespace BTree_private
 		{
 			return page.size();
 		}
+
+		Node* replaceChild()
+		{
+			// Leaves have no children - they cannot be replaced
+			return 0;
+		}
 	};
 
 	template<class K, class V, int PAGE_SIZE>
@@ -420,7 +433,7 @@ namespace BTree_private
 							el->next->value = 0;
 							page.remove(el->next->key);
 							node->merge(toMerge);
-							delete(toMerge);
+							delete toMerge;
 						}
 					}
 				}
@@ -476,6 +489,17 @@ namespace BTree_private
 		int count() const
 		{
 			return page.size();
+		}
+
+		Node* replaceChild()
+		{
+			if (page.size() == 1) {
+				NodeElement* el = page.first();
+				page.remove(el->key);
+				return el->value;
+			} else {
+				return 0;
+			}
 		}
 	};
 
@@ -561,6 +585,11 @@ public:
 	void remove(const K& key)
 	{
 		root_->remove(key);
+		Node* newRoot = root_->replaceChild();
+		if (newRoot != 0) {
+			delete root_;
+			root_ = newRoot;
+		}
 	}
 
 	void print()

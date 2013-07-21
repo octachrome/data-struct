@@ -231,18 +231,27 @@ TEST(BTreeTest, CombinePages) {
 	ASSERT_EQ(0, totalCreated) << "Expected no values to have been created";
 	b[3] = fill;
 	ASSERT_EQ(0, totalCreated) << "Expected no values to have been created";
+	ASSERT_EQ(1, b.depth()) << "Expected a tree of depth 1";
 	b[4] = fill;
 	ASSERT_EQ(4, totalCreated) << "Expected four values to have been created (new page allocated)";
+	ASSERT_EQ(2, b.depth()) << "Expected a tree of depth 2";
+
+	// First page contains 0, 1; second page contains 2, 3, 4
 
 	totalDestroyed = 0;
 	b.remove(0);
 	ASSERT_EQ(0, totalDestroyed) << "Expected no values to have been destroyed (elements redistributed)";
+	ASSERT_EQ(2, b.depth()) << "Expected a tree of depth 2";
+
+	// First page contains 1, 2; second page contains 3, 4
 
 	b.remove(1);
 	ASSERT_EQ(4, totalDestroyed) << "Expected four values to have been destroyed (pages merged)";
+	ASSERT_EQ(1, b.depth()) << "Expected a tree of depth 1";
+
+	// First page contains 2, 3, 4
 }
 
-// check depth
 // remove an element which requires a merge with the preceeding node
 
 // proper iterators
