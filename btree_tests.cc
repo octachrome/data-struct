@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 #include <cstring>
 
+static int totalCreated = 0;
 static int totalDestroyed = 0;
 
 class Data {
@@ -9,6 +10,7 @@ class Data {
 public:
 	Data() {
 		str_[0] = 0;
+		totalCreated++;
 	}
 
 	Data(const char *str) {
@@ -216,5 +218,32 @@ TEST(BTreeTest, RandomInsertion) {
 	}
 }
 
-// delete and combine nodes
+TEST(BTreeTest, CombinePages) {
+	Data fill("test");
+	BTree<int, Data, 4> b;
+	totalCreated = 0;
+
+	b[0] = fill;
+	ASSERT_EQ(0, totalCreated) << "Expected no values to have been created";
+	b[1] = fill;
+	ASSERT_EQ(0, totalCreated) << "Expected no values to have been created";
+	b[2] = fill;
+	ASSERT_EQ(0, totalCreated) << "Expected no values to have been created";
+	b[3] = fill;
+	ASSERT_EQ(0, totalCreated) << "Expected no values to have been created";
+	b[4] = fill;
+	ASSERT_EQ(4, totalCreated) << "Expected four values to have been created (new page allocated)";
+
+	totalDestroyed = 0;
+	b.remove(0);
+	ASSERT_EQ(0, totalDestroyed) << "Expected no values to have been destroyed (elements redistributed)";
+
+	b.remove(1);
+	ASSERT_EQ(4, totalDestroyed) << "Expected four values to have been destroyed (pages merged)";
+}
+
+// check depth
+// remove an element which requires a merge with the preceeding node
+
 // proper iterators
+// memset bug

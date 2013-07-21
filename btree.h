@@ -208,12 +208,38 @@ namespace BTree_private
 			size_ = PAGE_SIZE/2;
 		}
 
+		void addAll(BTree_Page& page)
+		{
+			Element* e = page.first_;
+			while (e != 0) {
+				Element* newElement = insert(e->key);
+				newElement->value = e->value;
+				e = e->next;
+			}
+		}
+
+		void borrow(BTree_Page& page)
+		{
+			Element* e = page.first_;
+			Element* newElement = insert(e->key);
+			newElement->value = e->value;
+			page.remove(e->key);
+		}
+
 		/**
 		 * @return true if the page is full
 		 */
-		bool full()
+		bool full() const
 		{
 			return size_ == PAGE_SIZE;
+		}
+
+		/**
+		 * @return the number of elements stored in the page
+		 */
+		int size() const
+		{
+			return size_;
 		}
 	};
 
@@ -222,7 +248,6 @@ namespace BTree_private
 	{
 	private:
 		typedef BTree_Element<K, V> Element;
-		typedef BTree_Node<K, V, PAGE_SIZE> Self;
 
 	public:
 		virtual ~BTree_Node() {}
@@ -235,11 +260,21 @@ namespace BTree_private
 
 		virtual Element* first() const = 0;
 
-		virtual Self* split() = 0;
+		virtual BTree_Node* split() = 0;
+
+		virtual void merge(BTree_Node* node) = 0;
+
+		virtual void borrow(BTree_Node* node) = 0;
 
 		virtual void print(int indent) const = 0;
 
 		virtual int depth() const = 0;
+
+		/**
+		 * The number of elements stored in *this* node. For indexes, this is the number of child nodes. For leaves,
+		 * the number of data elements.
+		 */
+		virtual int count() const = 0;
 	};
 
 	template<class K, class V, int PAGE_SIZE>
@@ -248,6 +283,7 @@ namespace BTree_private
 	private:
 		typedef BTree_Element<K, V> Element;
 		typedef BTree_Page<K, V, PAGE_SIZE> Page;
+		typedef BTree_Node<K, V, PAGE_SIZE> Node;
 
 		Page page;
 
@@ -279,6 +315,18 @@ namespace BTree_private
 			return newLeaf;
 		}
 
+		void merge(Node* node)
+		{
+			Leaf* leaf = static_cast<Leaf*>(node);
+			page.addAll(leaf->page);
+		}
+
+		void borrow(Node* node)
+		{
+			Leaf* leaf = static_cast<Leaf*>(node);
+			page.borrow(leaf->page);
+		}
+
 		void print(int indent) const
 		{
 			const Element* e = page.first();
@@ -294,6 +342,11 @@ namespace BTree_private
 		int depth() const
 		{
 			return 1;
+		}
+
+		int count() const
+		{
+			return page.size();
 		}
 	};
 
@@ -354,10 +407,24 @@ namespace BTree_private
 		void remove(const K& key)
 		{
 			NodeElement* el = page.findInsertPos(key);
-			if (el == 0) {
-				el = page.first();
+			if (el != 0) {
+				Node* node = el->value;
+				node->remove(key);
+				if (node->count() < PAGE_SIZE/2) {
+					if (el->next != 0) {
+						Node* toMerge = el->next->value;
+						if (toMerge->count() > PAGE_SIZE/2) {
+							node->borrow(toMerge);
+							el->next->key = toMerge->first()->key;
+						} else {
+							el->next->value = 0;
+							page.remove(el->next->key);
+							node->merge(toMerge);
+							delete(toMerge);
+						}
+					}
+				}
 			}
-			el->value->remove(key);
 		}
 
 		Element* first() const
@@ -370,6 +437,16 @@ namespace BTree_private
 			Index* newIndex = new Index;
 			page.split(newIndex->page);
 			return newIndex;
+		}
+
+		void merge(Node*)
+		{
+
+		}
+
+		void borrow(Node*)
+		{
+
 		}
 
 		void addPage(Node* p)
@@ -394,6 +471,11 @@ namespace BTree_private
 		int depth() const
 		{
 			return 1 + page.first()->value->depth();
+		}
+
+		int count() const
+		{
+			return page.size();
 		}
 	};
 
