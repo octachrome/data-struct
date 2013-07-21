@@ -117,24 +117,26 @@ TEST(BTreeTest, RecycleElements) {
 	}
 }
 
-void allocateTree(Data& fill, int count) {
-	BTree<int, Data, 4> b;
-	for (int i = 0; i < count; i++) {
-		b[i] = fill;
-	}
-}
-
 TEST(BTreeTest, ValueDestructorCalled) {
 	Data fill("test");
-	totalDestroyed = 0;
-	allocateTree(fill, 0);
+	{
+		BTree<int, Data, 4> b;
+		totalDestroyed = 0;
+		// b goes out of scope here
+	}
 	ASSERT_EQ(4, totalDestroyed) << "Expected every element in the page to have been destroyed";
 }
 
 TEST(BTreeTest, ValueDestructorCalledForDeepTree) {
 	Data fill("test");
-	totalDestroyed = 0;
-	allocateTree(fill, 16);
+	{
+		BTree<int, Data, 4> b;
+		for (int i = 0; i < 16; i++) {
+			b[i] = fill;
+		}
+		totalDestroyed = 0;
+		// b goes out of scope here
+	}
 	ASSERT_EQ(28, totalDestroyed) << "Expected 28 elements (7 pages) of elements to have been destroyed";
 }
 
