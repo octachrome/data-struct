@@ -5,30 +5,36 @@
 static int totalCreated = 0;
 static int totalDestroyed = 0;
 
-class Base {
+class Base
+{
 	virtual void v() = 0;
 };
 
-class Data : public Base {
+class Data : public Base
+{
 	char str_[100];
 public:
-	Data() {
+	Data()
+	{
 		str_[0] = 0;
 		totalCreated++;
 	}
 
-	Data(const char *str) {
+	Data(const char *str)
+	{
 		strncpy(str_, str, 100);
 		str_[99] = 0;
 	}
 
-	~Data() {
+	~Data()
+	{
 		totalDestroyed++;
 	}
 
 	const char* str() const { return str_; };
 
-	int compare(Data& d2) const {
+	int compare(Data& d2) const
+	{
 		return strcmp(str_, d2.str_);
 	}
 
@@ -38,11 +44,13 @@ public:
 	}
 };
 
-int compare(Data& d1, Data& d2) {
+int compare(Data& d1, Data& d2)
+{
 	return d1.compare(d2);
 }
 
-TEST(BTreeTest, AssignKeyValuePair) {
+TEST(BTreeTest, AssignKeyValuePair)
+{
 	BTree<int, Data> b;
 
 	b[4] = Data("test");
@@ -50,7 +58,8 @@ TEST(BTreeTest, AssignKeyValuePair) {
 	ASSERT_STREQ("test", b[4].str()) << "Expected 'test' to be in the BTree";
 }
 
-TEST(BTreeTest, AssignTwoKeyValuePairs) {
+TEST(BTreeTest, AssignTwoKeyValuePairs)
+{
 	BTree<int, Data> b;
 
 	b[4] = Data("four");
@@ -60,7 +69,8 @@ TEST(BTreeTest, AssignTwoKeyValuePairs) {
 	ASSERT_STREQ("nine", b[9].str()) << "Expected 9 to be mapped to 'nine'";
 }
 
-TEST(BTreeTest, Iterate) {
+TEST(BTreeTest, Iterate)
+{
 	BTree<int, Data> b;
 
 	b[4] = Data("four");
@@ -83,7 +93,8 @@ TEST(BTreeTest, Iterate) {
 	ASSERT_STREQ("nine", i->value.str()) << "Expected the correct value";
 }
 
-TEST(BTreeTest, Remove) {
+TEST(BTreeTest, Remove)
+{
 	BTree<int, Data> b;
 
 	b[4] = Data("four");
@@ -119,7 +130,8 @@ TEST(BTreeTest, Remove) {
 	ASSERT_FALSE(b.contains(10)) << "Expected 10 to be absent";
 }
 
-TEST(BTreeTest, RecycleElements) {
+TEST(BTreeTest, RecycleElements)
+{
 	BTree<int, Data, 4> b;
 
 	for (int i = 0; i < 20; i++) {
@@ -128,7 +140,8 @@ TEST(BTreeTest, RecycleElements) {
 	}
 }
 
-TEST(BTreeTest, ValueDestructorCalled) {
+TEST(BTreeTest, ValueDestructorCalled)
+{
 	Data fill("test");
 	{
 		BTree<int, Data, 4> b;
@@ -138,7 +151,8 @@ TEST(BTreeTest, ValueDestructorCalled) {
 	ASSERT_EQ(4, totalDestroyed) << "Expected every element in the page to have been destroyed";
 }
 
-TEST(BTreeTest, ValueDestructorCalledForDeepTree) {
+TEST(BTreeTest, ValueDestructorCalledForDeepTree)
+{
 	Data fill("test");
 	{
 		BTree<int, Data, 4> b;
@@ -151,9 +165,16 @@ TEST(BTreeTest, ValueDestructorCalledForDeepTree) {
 	ASSERT_EQ(28, totalDestroyed) << "Expected 28 elements (7 pages) of elements to have been destroyed";
 }
 
+TEST(BTreeTest, ObjectCorruption)
+{
+	BTree<int, Data, 4> b;
+	b[0].v();
+}
+
 char TEST_DATA[20*2];
 
-TEST(BTreeTest, OverflowOnePage) {
+TEST(BTreeTest, OverflowOnePage)
+{
 	for (int i = 0; i < 20; i++) {
 		TEST_DATA[2*i] = 'A' + i;
 		TEST_DATA[2*i+1] = 0;
@@ -170,7 +191,8 @@ TEST(BTreeTest, OverflowOnePage) {
 	}
 }
 
-TEST(BTreeTest, ThreeLevelTree) {
+TEST(BTreeTest, ThreeLevelTree)
+{
 	for (int i = 0; i < 20; i++) {
 		TEST_DATA[2*i] = 'A' + i;
 		TEST_DATA[2*i+1] = 0;
@@ -190,7 +212,8 @@ TEST(BTreeTest, ThreeLevelTree) {
 	ASSERT_EQ(3, b.depth()) << "Expected depth to be 3";
 }
 
-TEST(BTreeTest, LotsOfNodes) {
+TEST(BTreeTest, LotsOfNodes)
+{
 	BTree<int, Data, 16> b;
 
 	for (int i = 0; i < 200000; i++) {
@@ -202,7 +225,8 @@ TEST(BTreeTest, LotsOfNodes) {
 	}
 }
 
-TEST(BTreeTest, ReverseInsertion) {
+TEST(BTreeTest, ReverseInsertion)
+{
 	BTree<int, Data, 16> b;
 
 	for (int i = 200000-1; i >=0; i--) {
@@ -214,7 +238,8 @@ TEST(BTreeTest, ReverseInsertion) {
 	}
 }
 
-TEST(BTreeTest, RandomInsertion) {
+TEST(BTreeTest, RandomInsertion)
+{
 	BTree<int, Data, 16> b;
 
 	for (int i = 200000-1; i >=0; i--) {
@@ -227,7 +252,8 @@ TEST(BTreeTest, RandomInsertion) {
 	}
 }
 
-TEST(BTreeTest, CombinePages) {
+TEST(BTreeTest, CombinePages)
+{
 	Data fill("test");
 	BTree<int, Data, 4> b;
 	totalCreated = 0;
@@ -261,11 +287,6 @@ TEST(BTreeTest, CombinePages) {
 	// First page contains 2, 3, 4
 }
 
-TEST(BTreeTest, ObjectCorruption) {
-	BTree<int, Data, 4> b;
-	b[0].v();
-}
-
 // remove an element which requires a merge with the preceeding node
-
+// custom key comparator
 // proper iterators
