@@ -52,6 +52,7 @@ int compare(Data& d1, Data& d2)
 TEST(BTreeTest, AssignKeyValuePair)
 {
 	BTree<int, Data> b;
+	b.enableAsserts(true);
 
 	b[4] = Data("test");
 
@@ -61,6 +62,7 @@ TEST(BTreeTest, AssignKeyValuePair)
 TEST(BTreeTest, AssignTwoKeyValuePairs)
 {
 	BTree<int, Data> b;
+	b.enableAsserts(true);
 
 	b[4] = Data("four");
 	b[9] = Data("nine");
@@ -72,6 +74,7 @@ TEST(BTreeTest, AssignTwoKeyValuePairs)
 TEST(BTreeTest, Iterate)
 {
 	BTree<int, Data> b;
+	b.enableAsserts(true);
 
 	b[4] = Data("four");
 	b[9] = Data("nine");
@@ -96,6 +99,7 @@ TEST(BTreeTest, Iterate)
 TEST(BTreeTest, Remove)
 {
 	BTree<int, Data> b;
+	b.enableAsserts(true);
 
 	b[4] = Data("four");
 	b[9] = Data("nine");
@@ -133,6 +137,7 @@ TEST(BTreeTest, Remove)
 TEST(BTreeTest, RecycleElements)
 {
 	BTree<int, Data, 4> b;
+	b.enableAsserts(true);
 
 	for (int i = 0; i < 20; i++) {
 		b[4] = Data("four");
@@ -181,6 +186,7 @@ TEST(BTreeTest, OverflowOnePage)
 	}
 
 	BTree<int, Data, 16> b;
+	b.enableAsserts(true);
 
 	for (int i = 0; i < 20; i++) {
 		b[i] = Data(&TEST_DATA[i*2]);
@@ -200,6 +206,7 @@ TEST(BTreeTest, ThreeLevelTree)
 
 	// Need 4^3 leaves to store 20 elements
 	BTree<int, Data, 4> b;
+	b.enableAsserts(true);
 
 	for (int i = 0; i < 20; i++) {
 		b[i] = Data(&TEST_DATA[i*2]);
@@ -223,6 +230,8 @@ TEST(BTreeTest, LotsOfNodes)
 	for (int i = 0; i < 200000; i++) {
 		ASSERT_TRUE(b.contains(i)) << "Expected element " << i << " to have been stored";
 	}
+
+	ASSERT_TRUE(b.valid()) << "Expected a valid tree";
 }
 
 TEST(BTreeTest, ReverseInsertion)
@@ -236,6 +245,8 @@ TEST(BTreeTest, ReverseInsertion)
 	for (int i = 0; i < 200000; i++) {
 		ASSERT_TRUE(b.contains(i)) << "Expected element " << i << " to have been stored";
 	}
+
+	ASSERT_TRUE(b.valid()) << "Expected a valid tree";
 }
 
 TEST(BTreeTest, RandomInsertion)
@@ -250,14 +261,17 @@ TEST(BTreeTest, RandomInsertion)
 	for (int i = 0; i < 200000; i++) {
 		ASSERT_TRUE(b.contains(i)) << "Expected element " << i << " to have been stored";
 	}
+
+	ASSERT_TRUE(b.valid()) << "Expected a valid tree";
 }
 
 TEST(BTreeTest, CombinePages)
 {
 	Data fill("test");
 	BTree<int, Data, 4> b;
-	totalCreated = 0;
+	b.enableAsserts(true);
 
+	totalCreated = 0;
 	b[0] = fill;
 	ASSERT_EQ(0, totalCreated) << "Expected no values to have been created";
 	b[1] = fill;
@@ -283,6 +297,41 @@ TEST(BTreeTest, CombinePages)
 	b.remove(1);
 	ASSERT_EQ(4, totalDestroyed) << "Expected four values to have been destroyed (pages merged)";
 	ASSERT_EQ(1, b.depth()) << "Expected a tree of depth 1";
+
+	// First page contains 2, 3, 4
+}
+
+TEST(BTreeTest, CombinePages2)
+{
+	Data fill("test");
+	BTree<int, Data, 4> b;
+	b.enableAsserts(true);
+
+	totalCreated = 0;
+	b[0] = fill;
+	ASSERT_EQ(0, totalCreated) << "Expected no values to have been created";
+	b[1] = fill;
+	ASSERT_EQ(0, totalCreated) << "Expected no values to have been created";
+	b[3] = fill;
+	ASSERT_EQ(0, totalCreated) << "Expected no values to have been created";
+	b[4] = fill;
+	ASSERT_EQ(0, totalCreated) << "Expected no values to have been created";
+	ASSERT_EQ(1, b.depth()) << "Expected a tree of depth 1";
+	b[2] = fill;
+	ASSERT_EQ(4, totalCreated) << "Expected four values to have been created (new page allocated)";
+	ASSERT_EQ(2, b.depth()) << "Expected a tree of depth 2";
+
+	// First page contains 0, 1, 2; second page contains 3, 4
+
+	totalDestroyed = 0;
+	b.remove(4);
+	ASSERT_EQ(0, totalDestroyed) << "Expected no values to have been destroyed (elements redistributed)";
+	ASSERT_EQ(2, b.depth()) << "Expected a tree of depth 2";
+	// First page contains 0, 1; second page contains 2, 3
+
+//	b.remove(1);
+//	ASSERT_EQ(4, totalDestroyed) << "Expected four values to have been destroyed (pages merged)";
+//	ASSERT_EQ(1, b.depth()) << "Expected a tree of depth 1";
 
 	// First page contains 2, 3, 4
 }

@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstring>
+#include <assert.h>
 
 #define DEFAULT_PAGE_SIZE 16
 
@@ -240,6 +241,11 @@ namespace BTree_private
 		{
 			return size_;
 		}
+
+		bool valid() const
+		{
+			return size_ >= PAGE_SIZE/2 && size_ <= PAGE_SIZE;
+		}
 	};
 
 	template<class K, class V, int PAGE_SIZE>
@@ -280,6 +286,8 @@ namespace BTree_private
 		 * value, it means that this node has a single child, which can be a replacement for the node itself.
 		 */
 		virtual BTree_Node* replaceChild() = 0;
+
+		virtual bool valid(int depth) const = 0;
 	};
 
 	template<class K, class V, int PAGE_SIZE>
@@ -358,6 +366,11 @@ namespace BTree_private
 		{
 			// Leaves have no children - they cannot be replaced
 			return 0;
+		}
+
+		bool valid(int depth) const
+		{
+			return depth == 0 || page.valid();
 		}
 	};
 
@@ -499,6 +512,23 @@ namespace BTree_private
 				return 0;
 			}
 		}
+
+		bool valid(int depth) const
+		{
+			if (depth > 0 && !page.valid()) {
+				return false;
+			}
+
+			NodeElement* ie = page.first();
+			while (ie != 0) {
+				if (!ie->value->valid(depth + 1)) {
+					return false;
+				}
+				ie = ie->next;
+			}
+
+			return true;
+		}
 	};
 
 	template<class K, class V>
@@ -542,6 +572,14 @@ class BTree
 	typedef BTree_private::BTree_Element<K, V> Element;
 
 	Node* root_;
+	bool asserts_;
+
+	void assertValid()
+	{
+		if (asserts_) {
+			assert(valid());
+		}
+	}
 
 public:
 	typedef BTree_private::BTree_Iterator<K, V> Iterator;
@@ -549,6 +587,7 @@ public:
 	BTree()
 	{
 		root_ = new Leaf;
+		asserts_ = false;
 	}
 
 	~BTree()
@@ -567,6 +606,7 @@ public:
 			root_ = newRoot;
 			e = root_->findOrInsert(key);
 		}
+		assertValid();
 		return e->value;
 	}
 
@@ -588,6 +628,7 @@ public:
 			delete root_;
 			root_ = newRoot;
 		}
+		assertValid();
 	}
 
 	void print()
@@ -598,5 +639,15 @@ public:
 	int depth()
 	{
 		return root_->depth();
+	}
+
+	void enableAsserts(bool enabled)
+	{
+		asserts_ = enabled;
+	}
+
+	bool valid()
+	{
+		return root_->valid(0);
 	}
 };
