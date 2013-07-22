@@ -221,13 +221,14 @@ TEST(BTreeTest, ThreeLevelTree)
 
 TEST(BTreeTest, LotsOfNodes)
 {
+	const int ITERATIONS = 200000;
 	BTree<int, Data, 16> b;
 
-	for (int i = 0; i < 200000; i++) {
+	for (int i = 0; i < ITERATIONS; i++) {
 		b[i] = Data("test");
 	}
 
-	for (int i = 0; i < 200000; i++) {
+	for (int i = 0; i < ITERATIONS; i++) {
 		ASSERT_TRUE(b.contains(i)) << "Expected element " << i << " to have been stored";
 	}
 
@@ -236,13 +237,14 @@ TEST(BTreeTest, LotsOfNodes)
 
 TEST(BTreeTest, ReverseInsertion)
 {
+	const int ITERATIONS = 200000;
 	BTree<int, Data, 16> b;
 
-	for (int i = 200000-1; i >=0; i--) {
+	for (int i = ITERATIONS-1; i >=0; i--) {
 		b[i] = Data("test");
 	}
 
-	for (int i = 0; i < 200000; i++) {
+	for (int i = 0; i < ITERATIONS; i++) {
 		ASSERT_TRUE(b.contains(i)) << "Expected element " << i << " to have been stored";
 	}
 
@@ -251,14 +253,15 @@ TEST(BTreeTest, ReverseInsertion)
 
 TEST(BTreeTest, RandomInsertion)
 {
+	const int ITERATIONS = 200000;
 	BTree<int, Data, 16> b;
 
-	for (int i = 200000-1; i >=0; i--) {
-		int key = (i * 257) % 200000;
+	for (int i = ITERATIONS-1; i >=0; i--) {
+		int key = (i * 257) % ITERATIONS;
 		b[key] = Data("test");
 	}
 
-	for (int i = 0; i < 200000; i++) {
+	for (int i = 0; i < ITERATIONS; i++) {
 		ASSERT_TRUE(b.contains(i)) << "Expected element " << i << " to have been stored";
 	}
 
@@ -334,6 +337,35 @@ TEST(BTreeTest, CombinePages2)
 	ASSERT_EQ(1, b.depth()) << "Expected a tree of depth 1";
 
 	// First page contains 0, 1, 2
+}
+
+TEST(BTreeTest, RandomInsertDelete)
+{
+	const int ITERATIONS = 400;
+	BTree<int, Data, 16> b;
+
+	for (int i = ITERATIONS-1; i >=0; i--) {
+		int key = (i * 229) % ITERATIONS;
+		b[key] = Data("test");
+
+		if (i % 1 == 0) {
+			ASSERT_TRUE(b.valid()) << "Expected a valid tree at iteration " << i;
+		}
+	}
+
+	for (int i = ITERATIONS-1; i >=0; i--) {
+		int key = (i * 929) % ITERATIONS;
+		b.remove(key);
+
+		if (i % 1 == 0) {
+			if (!b.valid()) {
+				b.print();
+				ASSERT_TRUE(b.valid()) << "Expected a valid tree at iteration " << i;
+			}
+		}
+	}
+
+	ASSERT_TRUE(b.valid()) << "Expected a valid tree";
 }
 
 // custom key comparator
