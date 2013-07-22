@@ -7,7 +7,7 @@
 namespace BTree_private
 {
 	/**
-	 * A basic singly-linked storage element which holds a key and corresponding value. Page data is stored in Elements.
+	 * A basic doubly-linked storage element which holds a key and corresponding value. Page data is stored in Elements.
 	 * @tparam K type of the key
 	 * @tparam V type of the value
 	 */
@@ -16,6 +16,7 @@ namespace BTree_private
 	{
 		static BTree_Element* const FULL;
 
+		BTree_Element* prev;
 		BTree_Element* next;
 		K key;
 		V value;
@@ -28,7 +29,7 @@ namespace BTree_private
 	BTree_Element<K, V>* const BTree_Element<K, V>::FULL = (BTree_Element<K, V>*) 1;
 
 	/**
-	 * A singly-linked key-value store. The storage elements are statically allocated within the page. The elements are
+	 * A doubly-linked key-value store. The storage elements are statically allocated within the page. The elements are
 	 * stored in order of increasing key. Pages are used in the BTree to store both data (in Leaves) and pointers to
 	 * other pages (in Indexes).
 	 * @tparam K the type of key the elements in the page will be associated with
@@ -46,11 +47,11 @@ namespace BTree_private
 		 */
 		int size_;
 		/**
-		 * A pointer to the first free element within the page.
+		 * A pointer to the first free element within the page. The free list is singly-linked.
 		 */
 		Element* free_;
 		/**
-		 * A pointer to the first data-holding element within the page.
+		 * A pointer to the first data-holding element within the page. The data list is doubly-linked.
 		 */
 		Element* first_;
 		/**
@@ -68,7 +69,8 @@ namespace BTree_private
 			first_ = 0;
 
 			free_ = &data_[0];
-			for (int i = 0; i < PAGE_SIZE; i++) {
+
+			for (int i = 0; i < PAGE_SIZE-1; ++i) {
 				data_[i].next = &data_[i+1];
 			}
 			data_[PAGE_SIZE-1].next = 0;
@@ -108,18 +110,27 @@ namespace BTree_private
 			if (size_ == PAGE_SIZE) {
 				return Element::FULL;
 			}
-			size_++;
+			++size_;
 
 			Element* e = free_;
 			free_ = free_->next;
+
 			e->key = key;
 
 			Element* i = findInsertPos(key);
 			if (i == 0) {
 				e->next = first_;
+				if (first_ != 0) {
+					first_->prev = e;
+				}
+				e->prev = 0;
 				first_ = e;
 				return e;
 			} else {
+				e->prev = i;
+				if (i->next != 0) {
+					i->next->prev = e;
+				}
 				e->next = i->next;
 				i->next = e;
 				return e;
@@ -165,20 +176,24 @@ namespace BTree_private
 		 */
 		void remove(const K& key)
 		{
-			Element* last = 0;
 			for (Element* e = first_; e != 0; e = e->next) {
 				if (e->key == key) {
-					if (last == 0) {
+					if (e->prev == 0) {
 						first_ = e->next;
+						if (first_ != 0) {
+							first_->prev = 0;
+						}
 					} else {
-						last->next = e->next;
+						e->prev->next = e->next;
+						if (e->next != 0) {
+							e->next->prev = e->prev;
+						}
 					}
 					e->next = free_;
 					free_ = e;
 					size_--;
 					return;
 				}
-				last = e;
 			}
 		}
 
@@ -188,13 +203,13 @@ namespace BTree_private
 		 */
 		void split(BTree_Page& newPage)
 		{
-			Element* lastToKeep;
+			assert(size_ == PAGE_SIZE);
+
 			Element* firstToRemove = this->first_;
-			for (int i = 0; i < PAGE_SIZE/2; i++) {
-				lastToKeep = firstToRemove;
+			for (int i = 0; i < PAGE_SIZE/2; ++i) {
 				firstToRemove = firstToRemove->next;
 			}
-			lastToKeep->next = 0;
+			firstToRemove->prev->next = 0;
 
 			Element* lastToRemove;
 			for (Element *e = firstToRemove; e != 0; e = e->next) {
@@ -344,7 +359,7 @@ namespace BTree_private
 		{
 			const Element* e = page.first();
 			while (e != 0) {
-				for (int i = 0; i < indent; i++) {
+				for (int i = 0; i < indent; ++i) {
 					std::cout << "  ";
 				}
 				std::cout << e->key << ": (value)" << std::endl;
@@ -390,9 +405,7 @@ namespace BTree_private
 		~Index()
 		{
 			for (NodeElement* e = page.first(); e != 0; e = e->next) {
-				if (e->value != 0) {
-					delete e->value;
-				}
+				delete e->value;
 			}
 		}
 
@@ -441,10 +454,20 @@ namespace BTree_private
 							node->borrow(toMerge);
 							el->next->key = toMerge->first()->key;
 						} else {
-							el->next->value = 0;
 							page.remove(el->next->key);
 							node->merge(toMerge);
 							delete toMerge;
+						}
+					} else if (el->prev != 0) {
+						Node* toMerge = el->prev->value;
+						if (toMerge->count() > PAGE_SIZE/2) {
+							node->borrow(toMerge);
+							el->prev->key = toMerge->first()->key;
+							el->key = node->first()->key;
+						} else {
+							page.remove(el->key);
+							toMerge->merge(node);
+							delete node;
 						}
 					}
 				}

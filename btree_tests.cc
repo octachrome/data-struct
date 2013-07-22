@@ -329,13 +329,12 @@ TEST(BTreeTest, CombinePages2)
 	ASSERT_EQ(2, b.depth()) << "Expected a tree of depth 2";
 	// First page contains 0, 1; second page contains 2, 3
 
-//	b.remove(1);
-//	ASSERT_EQ(4, totalDestroyed) << "Expected four values to have been destroyed (pages merged)";
-//	ASSERT_EQ(1, b.depth()) << "Expected a tree of depth 1";
+	b.remove(3);
+	ASSERT_EQ(4, totalDestroyed) << "Expected four values to have been destroyed (pages merged)";
+	ASSERT_EQ(1, b.depth()) << "Expected a tree of depth 1";
 
-	// First page contains 2, 3, 4
+	// First page contains 0, 1, 2
 }
 
-// remove an element which requires a merge with the preceeding node
 // custom key comparator
 // proper iterators
